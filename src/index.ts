@@ -6,11 +6,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const loader = new THREE.TextureLoader();
 
 function createAPillar(buildingHeigth: number, scene: THREE.Scene) {
   const [topRadius, bottomRadius] = [2, 2];
   const geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, buildingHeigth);
-  const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  const material = new THREE.MeshBasicMaterial({
+    map: loader.load('./assets/marbre.jpg'),
+  });
   const piller = new THREE.Mesh(geometry, material);
   scene.add(piller);
   return piller;
@@ -37,7 +40,6 @@ const buildingHeigth = 22;
 const space = -(buildingLength * 0.18) + pillarDiameter * 3;
 
 const scene = new THREE.Scene();
-const loader = new THREE.TextureLoader();
 const controls = new OrbitControls(camera, renderer.domElement); // add the ability to move the camera around the scene
 
 // pillars positions (one side) * 2
@@ -69,12 +71,12 @@ camera.position.z = 60;
 
 // box got 6 faces, so 6 materials
 const materials = [
-  new THREE.MeshBasicMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-1.jpg') }),
-  new THREE.MeshBasicMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-2.jpg') }),
-  new THREE.MeshBasicMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-3.jpg') }),
-  new THREE.MeshBasicMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-4.jpg') }),
-  new THREE.MeshBasicMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-5.jpg') }),
-  new THREE.MeshBasicMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-6.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('./assets/marbre.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('./assets/marbre.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('./assets/marbre.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('./assets/marbre.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('./assets/marbre.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('./assets/marbre.jpg') }),
 ];
 
 // create a box
@@ -90,7 +92,7 @@ floor.position.set(0, 0, 0);
 const roof = new THREE.Mesh(
   new THREE.BoxGeometry(buildingLength, 2, buildingLength * 0.3),
   new THREE.MeshBasicMaterial({
-    map: loader.load('https://threejsfundamentals.org/threejs/resources/images/wall.jpg'),
+    map: loader.load('./assets/marbre.jpg'),
   }),
 );
 
@@ -105,6 +107,8 @@ scene.add(roof);
 for (let index = 0; index < 2; index++) {
   setupSide(index);
 }
+
+
 
 (function animate() {
   requestAnimationFrame(animate);
