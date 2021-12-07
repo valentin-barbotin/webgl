@@ -8,9 +8,12 @@
     "build": "npx webpack"
   },
   "author": "",
+  "type": "commonjs",
   "license": "ISC",
   "devDependencies": {
+    "@types/dat.gui": "^0.7.7",
     "@types/gl-matrix": "^3.2.0",
+    "@types/live-server": "^1.2.1",
     "@types/node": "^16.10.3",
     "@types/three": "^0.133.0",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
@@ -25,7 +28,9 @@
     "webpack-cli": "^4.9.0"
   },
   "dependencies": {
-    "three": "^0.133.1",
-    "lodash": "^4.17.21"
+    "dat.gui": "^0.7.7",
+    "live-server": "^1.2.1",
+    "lodash": "^4.17.21",
+    "three": "^0.133.1"
   }
 }
