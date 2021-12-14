@@ -7,8 +7,34 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import dat from 'dat.gui';
 import { Vector3 } from 'three';
+import { objectToBuffer, BufferToObject, ws, Message } from './ws';
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+function connected() {
+  console.log('Connected to server ...');
+  if (ws.readyState === ws.OPEN) {
+    const response: Message = {
+      type: 'getAll',
+      data: 'welcome ok',
+    };
+    const payload = objectToBuffer(response);
+    ws.send(payload);
+  }
+}
+ws.onopen = connected;
+
+async function sendMessageToWS() {
+  console.log(ws.OPEN);
+  // if (ws.readyState === ws.OPEN) {
+  //   const response: Message = {
+  //     type: 'getAll',
+  //     data: 'welcome ok',
+  //   };
+  //   const payload = objectToBuffer(response);
+  //   ws.send(payload);
+  // }
+}
 
 function createAPillar(buildingHeigth: number, scene: THREE.Scene) {
   const [topRadius, bottomRadius] = [2, 2];
@@ -158,6 +184,8 @@ gui.add(light, 'castShadow');
 
 addVecToMenu(gui, light.position, 'Position');
 addVecToMenu(gui, light.target.position, 'Target');
+
+sendMessageToWS();
 
 (function animate() {
   requestAnimationFrame(animate);
