@@ -8,6 +8,10 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import dat from 'dat.gui';
 import { Vector3 } from 'three';
 import { objectToBuffer, BufferToObject, ws, Message } from './ws';
+import { GUI } from 'dat.gui'
+
+
+
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
@@ -177,10 +181,27 @@ function addVecToMenu(gui: dat.GUI, vec: Vector3, name: string) {
   folder.add(vec, 'z', -100, 100);
 }
 
-const gui = new dat.GUI();
-gui.addFolder('Light');
-gui.add(light, 'intensity', 0, 1);
-gui.add(light, 'castShadow');
+// const gui = new dat.GUI();
+// gui.addFolder('Light');
+// gui.add(light, 'intensity', 0, 1);
+// gui.add(light, 'castShadow');
+const geometry = new THREE.BoxGeometry()
+const material = new THREE.MeshBasicMaterial({
+    color: 0x00ff00,
+    wireframe: true,
+})
+const cube = new THREE.Mesh(geometry, material)
+scene.add(cube)
+
+const gui = new GUI()
+const cubeFolder = gui.addFolder('Cube')
+cubeFolder.add(cube.rotation, 'x', 0, 100)
+cubeFolder.add(cube.rotation, 'y', 0, 100)
+cubeFolder.add(cube.rotation, 'z', 0, 100)
+cubeFolder.open()
+const cameraFolder = gui.addFolder('Camera')
+cameraFolder.add(camera.position, 'z', 0, 100)
+cameraFolder.open()
 
 addVecToMenu(gui, light.position, 'Position');
 addVecToMenu(gui, light.target.position, 'Target');
