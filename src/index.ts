@@ -174,12 +174,30 @@ const cameraHelper = new THREE.CameraHelper(light.shadow.camera);
 scene.add(lightHelper);
 scene.add(cameraHelper);
 
+//Add chest
+const chest = new THREE.Mesh(
+  new THREE.BoxGeometry(10, 10, 10),
+  new THREE.MeshPhongMaterial({
+    map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-1.jpg'),
+  }),
+);
+chest.position.set(0, 7, 0);
+chest.receiveShadow = true;
+chest.castShadow = true;
+// const textureCube = new THREE.TextureLoader().load( 'https://threejsfundamentals.org/threejs/resources/images/flower-1.jpg' );
+// const geometryCube = new THREE.BoxGeometry( 10, 10, 10 );
+// const materialCube = new THREE.MeshBasicMaterial( { map: textureCube } );
+// const meshCube = new THREE.Mesh( geometryCube, materialCube );
+scene.add( chest );
+
 function addVecToMenu(gui: dat.GUI, vec: Vector3, name: string) {
   const folder = gui.addFolder(name);
   folder.add(vec, 'x', -100, 100);
   folder.add(vec, 'y', -100, 100);
   folder.add(vec, 'z', -100, 100);
 }
+
+
 
 // const gui = new dat.GUI();
 // gui.addFolder('Light');
@@ -213,6 +231,8 @@ sendMessageToWS();
   light.target.updateMatrixWorld();
   light.shadow.camera.updateProjectionMatrix();
   lightHelper.update();
+  chest.rotation.x += 0.005;
+  chest.rotation.y += 0.01;
 
   renderer.render(scene, camera);
 }());
