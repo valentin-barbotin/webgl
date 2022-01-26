@@ -8,7 +8,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import dat from 'dat.gui';
 import { Vector3 } from 'three';
 import { objectToBuffer, BufferToObject, ws, Message } from './ws';
-import { GUI } from 'dat.gui'
+import { GUI } from 'dat.gui';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
 
 
@@ -118,6 +119,7 @@ camera.position.z = 60;
 
 // box got 6 faces, so 6 materials
 const materials = [
+  // new THREE.MeshPhongMaterial({ map: loader.load('dist/assets/marbre.jpg') }),
   new THREE.MeshPhongMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-1.jpg') }),
   new THREE.MeshPhongMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-2.jpg') }),
   new THREE.MeshPhongMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-3.jpg') }),
@@ -126,6 +128,9 @@ const materials = [
   new THREE.MeshPhongMaterial({ map: loader.load('https://threejsfundamentals.org/threejs/resources/images/flower-6.jpg') }),
 ];
 
+if (!materials) {
+  console.log('Material not found');
+}
 // create a box
 const floor = new THREE.Mesh(
   new THREE.BoxGeometry(buildingLength, 2, buildingLength * 0.3),
@@ -188,7 +193,7 @@ chest.castShadow = true;
 // const geometryCube = new THREE.BoxGeometry( 10, 10, 10 );
 // const materialCube = new THREE.MeshBasicMaterial( { map: textureCube } );
 // const meshCube = new THREE.Mesh( geometryCube, materialCube );
-scene.add( chest );
+scene.add(chest);
 
 function addVecToMenu(gui: dat.GUI, vec: Vector3, name: string) {
   const folder = gui.addFolder(name);
@@ -205,24 +210,52 @@ function addVecToMenu(gui: dat.GUI, vec: Vector3, name: string) {
 // gui.add(light, 'castShadow');
 const geometry = new THREE.BoxGeometry()
 const material = new THREE.MeshBasicMaterial({
-    color: 0x00ff00,
-    wireframe: true,
+  color: 0x00ff00,
+  wireframe: true,
 })
 const cube = new THREE.Mesh(geometry, material)
 scene.add(cube)
 
 const gui = new GUI()
-const cubeFolder = gui.addFolder('Cube')
-cubeFolder.add(cube.rotation, 'x', 0, 100)
-cubeFolder.add(cube.rotation, 'y', 0, 100)
-cubeFolder.add(cube.rotation, 'z', 0, 100)
-cubeFolder.open()
+// const cubeFolder = gui.addFolder('Cube')
+// cubeFolder.add(cube.rotation, 'x', 0, 100)
+// cubeFolder.add(cube.rotation, 'y', 0, 100)
+// cubeFolder.add(cube.rotation, 'z', 0, 100)
+// cubeFolder.open()
 const cameraFolder = gui.addFolder('Camera')
-cameraFolder.add(camera.position, 'z', 0, 100)
+cameraFolder.add(camera.position, 'z', -100, 100)
 cameraFolder.open()
 
 addVecToMenu(gui, light.position, 'Position');
 addVecToMenu(gui, light.target.position, 'Target');
+
+var objs: { object: THREE.Group; mixer: THREE.AnimationMixer; }[] = []           
+var loaderCharacter = new FBXLoader();
+loaderCharacter.load("/dist/assets/Capoeira.fbx", function (object) {
+  if (!object) {
+    console.log("Character not found");
+    return;
+  };
+
+  object.scale.set(0.05, 0.05, 0.05);
+  object.position.set(20, 1, 0);
+  const mixer = new THREE.AnimationMixer(object);
+  var action = mixer.clipAction(object.animations[0]);
+
+  console.log(action);
+
+  action.play();
+  scene.add(object);
+  objs.push({object, mixer});
+})
+
+const clock = new THREE.Clock();  
+
+(function animate() {
+  objs.forEach(({mixer}) => {mixer.update(clock.getDelta());});
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+})();
 
 sendMessageToWS();
 
