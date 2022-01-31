@@ -5,15 +5,26 @@
 /* eslint-disable max-len */
 /* eslint-disable no-unused-vars */
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import dat from 'dat.gui';
 import { Vector3 } from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import GameController from './GameController';
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
+const dancerPath = '/dist/assets/Capoeira.fbx';
+const concretePath = '/dist/assets/concrete.jpg';
+const grassPath = '/dist/assets/grass.png';
+const dirtPath = '/dist/assets/dirt.jpg';
+const dirtGrassPath = '/dist/assets/dirtgrass.jpg';
+const marblePath = '/dist/assets/marble.jpg';
+
+const pillarDiameter = 2;
+const buildingLength = 80;
+const buildingHeigth = 22;
+const space = -(buildingLength * 0.18) + pillarDiameter * 3;
+
 const loader = new THREE.TextureLoader();
-const marbleMaterial = new THREE.MeshPhongMaterial({ map: loader.load('/dist/assets/marbre.jpg') });
+const marbleMaterial = new THREE.MeshPhongMaterial({ map: loader.load(marblePath) });
 
 /**
  * Create a pillar
@@ -21,7 +32,7 @@ const marbleMaterial = new THREE.MeshPhongMaterial({ map: loader.load('/dist/ass
  * @param {THREE.Scene} scene
  * @return {THREE.Mesh<THREE.CylinderGeometry, THREE.MeshPhongMaterial>} pillar
  */
-function createAPillar(buildingHeigth: number, scene: THREE.Scene): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshPhongMaterial> {
+function createAPillar(scene: THREE.Scene): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshPhongMaterial> {
   const [topRadius, bottomRadius] = [2, 2];
   const geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, buildingHeigth);
   const material = marbleMaterial.clone();
@@ -68,15 +79,7 @@ function onWindowResize() {
 }
 window.addEventListener('resize', onWindowResize, false);
 
-const dancerPath = '/dist/assets/Capoeira.fbx';
-
-const pillarDiameter = 2;
-const buildingLength = 80;
-const buildingHeigth = 22;
-const space = -(buildingLength * 0.18) + pillarDiameter * 3;
-
 const scene = new THREE.Scene();
-const controls = new OrbitControls(camera, renderer.domElement); // ability to move the camera around the scene
 
 // ambient light
 const ambiantLight = new THREE.AmbientLight(0xffffff, 0.2);
@@ -118,7 +121,7 @@ const positions = [
  */
 function setupSide(index: number) {
   for (const position of positions) {
-    createAPillar(buildingHeigth, scene).position.set(
+    createAPillar(scene).position.set(
       position,
       buildingHeigth / 2,
       index ? Math.abs(space) : space,
@@ -172,7 +175,7 @@ scene.add(roof);
 
 const ground = new THREE.Mesh(
   new THREE.BoxGeometry(buildingLength * 10, 1, buildingLength * 10),
-  new THREE.MeshPhongMaterial({ map: loader.load('/dist/assets/concrete.jpg') }),
+  new THREE.MeshPhongMaterial({ map: loader.load(concretePath) }),
 );
 
 ground.receiveShadow = true;
@@ -188,9 +191,9 @@ for (let index = 0; index < 2; index++) {
 // Create the chest and add it to the scene
 let chest: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial[]> | undefined;
 {
-  const grass = new THREE.MeshPhongMaterial({ map: loader.load('/dist/assets/grass.png') });
-  const dirt = new THREE.MeshPhongMaterial({ map: loader.load('/dist/assets/dirt.jpg') });
-  const dirtAndGrass = new THREE.MeshPhongMaterial({ map: loader.load('/dist/assets/dirtgrass.jpg') });
+  const grass = new THREE.MeshPhongMaterial({ map: loader.load(grassPath) });
+  const dirt = new THREE.MeshPhongMaterial({ map: loader.load(dirtPath) });
+  const dirtAndGrass = new THREE.MeshPhongMaterial({ map: loader.load(dirtGrassPath) });
   const _materials = [
     dirtAndGrass,
     dirtAndGrass,
@@ -223,58 +226,13 @@ lightFolder.add(light.shadow.camera, 'far', 0, 1000);
 addVecToMenu(gui, light.position, 'Position');
 addVecToMenu(gui, light.target.position, 'Target');
 
-const mixers: THREE.AnimationMixer[] = [];
-const loaderCharacter = new FBXLoader();
+const gameController = new GameController(camera, renderer);
 
-// load the FBX file
-// retrieve the first animation and play it
-// edit meshes to receive/cast shadows
-const dancer = await (async (): Promise<undefined | THREE.Group> => {
-  const group: THREE.Group = await loaderCharacter.loadAsync(dancerPath);
-  if (!group) {
-    console.log('Character not found');
-    return;
-  }
-
-  // Loop over the elements of the 3D (meshes, bones, keyframes animations..)
-  group.traverse((child) => {
-    if (child) {
-      console.log(child.type);
-      if (child instanceof THREE.Mesh) {
-        // eslint-disable-next-line no-param-reassign
-        child.castShadow = true;
-        // eslint-disable-next-line no-param-reassign
-        child.receiveShadow = true;
-      }
-    }
-  });
-
-  // create the animation mixer, specific to the character
-  const mixer = new THREE.AnimationMixer(group);
-
-  // retrieve the first animation and play it
-  const animation = group.animations.shift();
-  if (animation) {
-    const action = mixer.clipAction(animation);
-    action.play();
-    mixers.push(mixer);
-  }
-
-  group.scale.set(0.05, 0.05, 0.05);
-  group.position.set(20, roof.position.y + 1, 0);
-
-  scene.add(group);
-  // eslint-disable-next-line consistent-return
-  return group;
-})();
-
-const clock = new THREE.Clock();
+const velocity = new THREE.Vector3();
+const direction = new THREE.Vector3();
+let previousTime = performance.now();
 
 (function animate() {
-  // on each frame, update the shadows, characters animations and render the scene
-  for (const mixer of mixers) {
-    mixer.update(clock.getDelta());
-  }
   light.target.updateMatrixWorld();
   light.shadow.camera.updateProjectionMatrix();
   helper.update();
@@ -283,9 +241,35 @@ const clock = new THREE.Clock();
     chest.rotateY(0.01);
   }
 
-  if (dancer) {
-    dancer.rotateY(0.01);
+  const mass = 80;
+  const time = performance.now();
+  if (gameController.controls.isLocked) {
+    const delta = (time - previousTime) / 1000; // camera speed (high value = slow)
+    velocity.x -= velocity.x * 10.0 * delta; // friction (current velocity * friction * delta)
+    velocity.z -= velocity.z * 10.0 * delta; // friction
+    velocity.y -= 9.8 * mass * delta; // gravity * mass
+
+    direction.z = Number(gameController.moveForward) - Number(gameController.moveBackward); // 1 = forward, -1 = backward
+    direction.x = Number(gameController.moveRight) - Number(gameController.moveLeft);
+    direction.normalize(); // this ensures consistent movements in all directions+
+
+    if (gameController.moveForward || gameController.moveBackward) velocity.z -= direction.z * 400.0 * delta; // acceleration (direction * speed)
+    if (gameController.moveLeft || gameController.moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+    if (true) {
+      velocity.y = Math.max(0, velocity.y); // clamping (prevents going through the ground)
+    }
+
+    gameController.controls.moveRight(-velocity.x * delta); // delta used to make movement smooth
+    gameController.controls.moveForward(-velocity.z * delta);
+
+    gameController.controls.getObject().position.y += (velocity.y * delta); // apply gravity
+    if (gameController.controls.getObject().position.y < 10) {
+      velocity.y = 0;
+    }
   }
+
+  previousTime = time;
 
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
