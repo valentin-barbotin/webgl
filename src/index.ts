@@ -8,23 +8,16 @@ import * as THREE from 'three';
 import dat from 'dat.gui';
 import { Vector3 } from 'three';
 import GameController from './GameController';
+import Assets from './Assets';
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-const dancerPath = '/dist/assets/Capoeira.fbx';
-const concretePath = '/dist/assets/concrete.jpg';
-const grassPath = '/dist/assets/grass.png';
-const dirtPath = '/dist/assets/dirt.jpg';
-const dirtGrassPath = '/dist/assets/dirtgrass.jpg';
-const marblePath = '/dist/assets/marble.jpg';
 
 const pillarDiameter = 2;
 const buildingLength = 80;
 const buildingHeigth = 22;
 const space = -(buildingLength * 0.18) + pillarDiameter * 3;
 
-const loader = new THREE.TextureLoader();
-const marbleMaterial = new THREE.MeshPhongMaterial({ map: loader.load(marblePath) });
+const assets = new Assets();
 
 /**
  * Create a pillar
@@ -32,10 +25,10 @@ const marbleMaterial = new THREE.MeshPhongMaterial({ map: loader.load(marblePath
  * @param {THREE.Scene} scene
  * @return {THREE.Mesh<THREE.CylinderGeometry, THREE.MeshPhongMaterial>} pillar
  */
-function createAPillar(scene: THREE.Scene): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshPhongMaterial> {
+async function createAPillar(scene: THREE.Scene): Promise<THREE.Mesh<THREE.CylinderGeometry, THREE.MeshPhongMaterial>> {
   const [topRadius, bottomRadius] = [2, 2];
   const geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, buildingHeigth);
-  const material = marbleMaterial.clone();
+  const material = new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.marble) });;
   const piller = new THREE.Mesh(geometry, material);
   piller.receiveShadow = true;
   piller.castShadow = true;
@@ -175,7 +168,7 @@ scene.add(roof);
 
 const ground = new THREE.Mesh(
   new THREE.BoxGeometry(buildingLength * 10, 1, buildingLength * 10),
-  new THREE.MeshPhongMaterial({ map: loader.load(concretePath) }),
+  new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.concrete) }),
 );
 
 ground.receiveShadow = true;
@@ -191,9 +184,9 @@ for (let index = 0; index < 2; index++) {
 // Create the chest and add it to the scene
 let chest: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial[]> | undefined;
 {
-  const grass = new THREE.MeshPhongMaterial({ map: loader.load(grassPath) });
-  const dirt = new THREE.MeshPhongMaterial({ map: loader.load(dirtPath) });
-  const dirtAndGrass = new THREE.MeshPhongMaterial({ map: loader.load(dirtGrassPath) });
+  const grass = new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.grass) }),
+  const dirt = new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.dirt) });
+  const dirtAndGrass = new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.dirtGrass) });
   const _materials = [
     dirtAndGrass,
     dirtAndGrass,
