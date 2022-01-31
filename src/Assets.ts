@@ -28,7 +28,7 @@ class Assets {
     console.log(`${performance.now() - soundLoadingTime} ms to load textures`);
   }
 
-  public async load(key: string): Promise<Texture> {
+  public async getTexture(key: string): Promise<Texture> {
     const path = this.textureMap.has(key);
 
     if (!path) {

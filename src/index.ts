@@ -28,7 +28,7 @@ const assets = new Assets();
 async function createAPillar(scene: THREE.Scene): Promise<THREE.Mesh<THREE.CylinderGeometry, THREE.MeshPhongMaterial>> {
   const [topRadius, bottomRadius] = [2, 2];
   const geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, buildingHeigth);
-  const material = new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.marble) });;
+  const material = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.marble) });
   const piller = new THREE.Mesh(geometry, material);
   piller.receiveShadow = true;
   piller.castShadow = true;
@@ -95,80 +95,14 @@ scene.add(light);
 const helper = new THREE.SpotLightHelper(light, 5);
 scene.add(helper);
 
-// pillars positions (one side) * 2
-const positions = [
-  -35,
-  -25,
-  -15,
-  -5,
-  5,
-  15,
-  25,
-  35,
-];
-
-/**
- * Place the pillars on the floor
- * @param {number} index
- * @return {void}
- */
-function setupSide(index: number) {
-  for (const position of positions) {
-    createAPillar(scene).position.set(
-      position,
-      buildingHeigth / 2,
-      index ? Math.abs(space) : space,
-    );
-  }
-}
-
 // camera base position
 camera.position.x = 5;
 camera.position.y = 20;
 camera.position.z = 60;
 
-// box got 6 faces, so 6 materials
-// clone the materials
-const materials = [
-  marbleMaterial.clone(),
-  marbleMaterial.clone(),
-  marbleMaterial.clone(),
-  marbleMaterial.clone(),
-  marbleMaterial.clone(),
-  marbleMaterial.clone(),
-];
-
-if (!materials) {
-  console.log('Material not found');
-}
-// create a box
-const floor = new THREE.Mesh(
-  new THREE.BoxGeometry(buildingLength, 2, buildingLength * 0.3),
-  materials,
-);
-
-// define the position of the floor in the scene
-floor.position.set(0, 0, 0);
-floor.receiveShadow = true;
-floor.castShadow = true;
-
-// create a box
-const roof = new THREE.Mesh(
-  new THREE.BoxGeometry(buildingLength, 2, buildingLength * 0.3),
-  marbleMaterial.clone(),
-);
-
-// define the position of the ceil in the scene, higher than the floor
-roof.position.set(0, buildingHeigth, 0);
-roof.receiveShadow = true;
-roof.castShadow = true;
-// add the meshs in the scene
-scene.add(floor);
-scene.add(roof);
-
 const ground = new THREE.Mesh(
   new THREE.BoxGeometry(buildingLength * 10, 1, buildingLength * 10),
-  new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.concrete) }),
+  new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.concrete) }),
 );
 
 ground.receiveShadow = true;
@@ -176,17 +110,12 @@ ground.castShadow = true;
 ground.position.set(0, -1, 0);
 scene.add(ground);
 
-// add the pillars on the sides
-for (let index = 0; index < 2; index++) {
-  setupSide(index);
-}
-
 // Create the chest and add it to the scene
 let chest: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial[]> | undefined;
 {
-  const grass = new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.grass) }),
-  const dirt = new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.dirt) });
-  const dirtAndGrass = new THREE.MeshPhongMaterial({ map: await assets.load(assets.textureList.dirtGrass) });
+  const grass = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.grass) });
+  const dirt = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.dirt) });
+  const dirtAndGrass = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.dirtGrass) });
   const _materials = [
     dirtAndGrass,
     dirtAndGrass,
@@ -200,7 +129,6 @@ let chest: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial[]> | undefined;
     new THREE.BoxGeometry(10, 10, 10),
     _materials,
   );
-  chest.position.set(-5, roof.position.y + roof.geometry.parameters.height + 10, 0);
   chest.receiveShadow = true;
   chest.castShadow = true;
   scene.add(chest);
@@ -225,14 +153,12 @@ const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 let previousTime = performance.now();
 
+const character = chest;
+
 (function animate() {
   light.target.updateMatrixWorld();
   light.shadow.camera.updateProjectionMatrix();
   helper.update();
-  if (chest) {
-    chest.rotateX(0.005);
-    chest.rotateY(0.01);
-  }
 
   const mass = 80;
   const time = performance.now();
@@ -260,6 +186,11 @@ let previousTime = performance.now();
     if (gameController.controls.getObject().position.y < 10) {
       velocity.y = 0;
     }
+
+    const camPos = gameController.controls.getObject().position;
+    character.position.x = camPos.x;
+    character.position.y = character.geometry.parameters.height / 2;
+    character.position.z = camPos.z + 30;
   }
 
   previousTime = time;
