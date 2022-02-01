@@ -156,32 +156,22 @@ class Game {
       // Ch33_Eyelashes
       //   const eyes = this.Character.ped.getObjectByName('Ch33_Eyelashes');
 
-      const camerafdp = this.GameController.controls.getObject();
+      const camera = this.GameController.controls.getObject();
       const pointer = new THREE.Vector2(0, 0);
 
       // Updates the ray with a new origin and direction. //
-      this.raycaster.setFromCamera(pointer, camerafdp); // il dirige le rayon a partir de la camera vers le centre de l'ecran
+      this.raycaster.setFromCamera(pointer, camera); // il dirige le rayon a partir de la camera vers le centre de l'ecran
 
       this.Character.ped.setRotationFromEuler(
-        camerafdp.rotation,
+        camera.rotation,
       );
 
-      this.Character.ped.position.x = camerafdp.position.x + 2;
+      this.Character.ped.position.x = camera.position.x + 2;
       // character.position.y = character.geometry.parameters.height / 2;
-      this.Character.ped.position.z = camerafdp.position.z + 2;
+      this.Character.ped.position.z = camera.position.z + 2;
 
       if (this.lastPosition !== prepareVec3(this.Character.ped.position.clone())) {
-        const toSend = {
-          type: 'PositionAndDir',
-          position: this.Character.ped.position.toArray(),
-          rotation: camerafdp.rotation.toArray(),
-        };
-
-        const message: Message = {
-          type: toSend.type,
-          data: toSend,
-        };
-        this.backend.sendMessage(message);
+        this.syncCharacter(this.Character);
       }
     }
 
@@ -198,6 +188,24 @@ class Game {
     requestAnimationFrame(this.renderScene.bind(this));
     this.renderer.render(this.scene, this.camera);
     this.previousTime = time;
+  }
+
+  private syncCharacter(character: Character) {
+    if (!this.Character) {
+      throw new Error('Character is not set');
+    }
+
+    const toSend = {
+      type: 'PositionAndDir',
+      position: character.ped.position.toArray(),
+      rotation: this.camera.rotation.toArray(),
+    };
+
+    const message: Message = {
+      type: toSend.type,
+      data: toSend,
+    };
+    this.backend.sendMessage(message);
   }
 
   // eslint-disable-next-line class-methods-use-this
