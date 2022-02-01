@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 /* eslint-disable import/extensions */
 /* eslint-disable import/no-unresolved */
 /* eslint-disable no-underscore-dangle */
@@ -8,7 +9,7 @@ import GameController from './GameController';
 import Character from './Character';
 import Assets from './Assets';
 import { BufferToObject, prepareVec3 } from './utils';
-import { Message } from './interfaces/Message';
+import { IMessageSync, Message } from './interfaces/Message';
 import Backend from './Backend';
 import IUser from './interfaces/User';
 
@@ -47,12 +48,16 @@ class Game {
 
   private lastPosition?: string;
 
+  private players: Map<string, IUser>;
+
   constructor() {
     this.renderer = this.setupRenderer();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.x = 0;
     this.camera.position.y = 20;
     this.camera.position.z = 0;
+
+    this.players = new Map<string, IUser>();
 
     this.scene = new THREE.Scene();
     [this.ambiantLight, this.light] = this.setupLights();
@@ -103,12 +108,31 @@ class Game {
     // eslint-disable-next-line no-underscore-dangle
     const _message: Message = BufferToObject(data);
 
-    const payload = _message.data;
     switch (_message.type) {
-      case 'res_PositionAndDir':
+      case 'userQuit': {
+        const payload = _message.data as IUser;
+        this.players.delete(payload.id);
+        console.log(`${payload.name} quited`);
+        break;
+      }
+      case 'userJoined': {
+        const payload = _message.data as IUser;
+        const exists = this.players.get(payload.id);
+        if (exists) throw new Error('User already exists'); // wtf
+
+        const model = await this.assets?.getModel(this.assets.modelList.boug);
+        if (!model) throw new Error('User already exists');
+        payload.character = new Character(model);
+        this.players.set(payload.id, payload);
+        console.log(`${payload.name} joined`);
+        break;
+      }
+      case 'res_PositionAndDir': {
+        const payload = _message.data as IMessageSync;
         this.lastVecFromSRVCLient2 = new THREE.Vector3(...payload.position);
         this.lastDirFromSRVCLient2 = new THREE.Euler(...payload.rotation);
         break;
+      }
 
       default:
         break;

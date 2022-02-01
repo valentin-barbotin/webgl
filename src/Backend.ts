@@ -66,16 +66,16 @@ class Backend {
     }
   }
 
-  public static handleLoginResponse(message: Message): boolean {
-    // wait backend
-    return true;
+//   public static handleLoginResponse(message: Message): boolean {
+//     // wait backend
+//     return true;
 
-    if (message.data.login) {
-      console.log('Login success');
-      return true;
-    }
-    return false;
-  }
+//     // if (message.data.login) {
+//     //   console.log('Login success');
+//     //   return true;
+//     // }
+//     // return false;
+//   }
 
   public sendMessage(message: Message) {
     if (!this.endpoint) return;
