@@ -6,9 +6,12 @@
 /* eslint-disable no-unused-vars */
 import * as THREE from 'three';
 import dat from 'dat.gui';
-import { Vector3 } from 'three';
+import { Vector, Vector3, Vector3Tuple } from 'three';
 import GameController from './GameController';
 import Assets from './Assets';
+import {
+  objectToBuffer, BufferToObject, ws, Message, sendMessageToWS, getPos, getClient2Pos,
+} from './ws';
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
@@ -112,6 +115,7 @@ scene.add(ground);
 
 // Create the chest and add it to the scene
 let chest: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial[]> | undefined;
+let chest2: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial[]> | undefined;
 {
   const grass = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.grass) });
   const dirt = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.dirt) });
@@ -133,6 +137,28 @@ let chest: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial[]> | undefined;
   chest.castShadow = true;
   scene.add(chest);
 }
+//tmp
+{
+  const grass = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.grass) });
+  const dirt = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.dirt) });
+  const dirtAndGrass = new THREE.MeshPhongMaterial({ map: await assets.getTexture(assets.textureList.dirtGrass) });
+  const _materials = [
+    dirtAndGrass,
+    dirtAndGrass,
+    grass,
+    dirt,
+    dirtAndGrass,
+    dirtAndGrass,
+  ];
+
+  chest2 = new THREE.Mesh(
+    new THREE.BoxGeometry(10, 10, 10),
+    _materials,
+  );
+  chest2.receiveShadow = true;
+  chest2.castShadow = true;
+  scene.add(chest2);
+}
 
 const gui = new dat.GUI();
 const cameraFolder = gui.addFolder('Camera');
@@ -153,7 +179,59 @@ const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 let previousTime = performance.now();
 
+function connected() {
+  console.log('Connected to server ...');
+  if (ws.readyState === ws.OPEN) {
+    const response: Message = {
+      type: 'getAll',
+      data: 'welcome ok',
+    };
+    const payload = objectToBuffer(response);
+    ws.send(payload);
+  }
+}
+ws.onopen = connected;
+
+{
+  const message: Message = {
+    type: 'getAll',
+    data: 'welcome ok',
+  };
+  sendMessageToWS(message);
+}
+
 const character = chest;
+const character2 = chest2;
+
+// {
+//   console.log('Sending sync position');
+//   const message: Message = {
+//     type: 'syncPosition',
+//     data: '',
+//   };
+//   setInterval(() => {
+//     message.data = character.position.toArray().toString();
+//     sendMessageToWS(message);
+//   }, 50);
+// }
+
+function prepareVec3(vec3: Vector3) {
+  const _vec3 = vec3.toArray().map((v) => v.toFixed(20)).map((v) => parseFloat(v));
+  return _vec3.toString();
+}
+
+let lastPosition: string = prepareVec3(character.position.clone());
+
+function syncPositionWithServer(vec3: Vector3) {
+  const position = prepareVec3(vec3);
+  lastPosition = position;
+  console.log('Sending sync position');
+  const message: Message = {
+    type: 'syncPosition',
+    data: position,
+  };
+  sendMessageToWS(message);
+}
 
 (function animate() {
   light.target.updateMatrixWorld();
@@ -188,10 +266,28 @@ const character = chest;
     }
 
     const camPos = gameController.controls.getObject().position;
+    // if (lastPosition.x === 0) {
     character.position.x = camPos.x;
     character.position.y = character.geometry.parameters.height / 2;
     character.position.z = camPos.z + 30;
+    // }
+
+    // const positionToSend = new THREE.Vector3(camPos.x, character.geometry.parameters.height / 2, camPos.z + 30);
+
+    // console.log('character.position', prepareVec3(character.position));
+    // console.log('lastPosition', lastPosition);
+    if (prepareVec3(character.position) !== lastPosition) {
+      syncPositionWithServer(character.position);
+    }
+
+    const newPos = getPos();
+    character.position.set(newPos.x, newPos.y, newPos.z);
+    // console.log('character 1 position', newPos);
   }
+
+  const client2Pos = getClient2Pos();
+  character2.position.set(client2Pos.x, client2Pos.y, client2Pos.z);
+  // console.log('character 2 position', client2Pos);
 
   previousTime = time;
 
