@@ -16,8 +16,6 @@ class Assets {
 
   private texturesLoaded: number = 0;
 
-  private modelsLoaded: number = 0;
-
   public textureList = {
     concrete: '/dist/assets/concrete.jpg',
     grass: '/dist/assets/grass.png',
@@ -27,7 +25,8 @@ class Assets {
   };
 
   public modelList = {
-    boug: '/dist/assets/boug.fbx',
+    boug: '/dist/assets/boug3.fbx',
+    Capoeira: '/dist/assets/Capoeira.fbx',
   };
 
   constructor() {
@@ -36,22 +35,10 @@ class Assets {
     this.TextureLoader = new TextureLoader();
     this.FBXLoader = new FBXLoader();
     this.texturesLoaded = Object.keys(this.textureList).length;
-    this.modelsLoaded = Object.keys(this.modelList).length;
   }
 
   public async setup() {
     const Tracker = new EventEmitter();
-    // 3Ds
-    const modelLoadingTime = performance.now();
-    Object.values(this.modelList).forEach(async (value) => {
-      const data = await this.FBXLoader.loadAsync(value);
-      this.modelMap.set(value, data);
-      this.modelsLoaded--;
-      Tracker.emit('processed');
-      console.log(value, 'loaded');
-    });
-    console.log(`${performance.now() - modelLoadingTime} ms to load models`);
-
     // Textures
     const textureLoadingTime = performance.now();
     Object.values(this.textureList).forEach(async (value) => {
@@ -65,20 +52,20 @@ class Assets {
 
     await new Promise<void>((resolve) => {
       Tracker.on('processed', () => {
-        if (this.modelsLoaded === 0 && this.texturesLoaded === 0) {
+        if (this.texturesLoaded === 0) {
           resolve();
         }
       });
     });
   }
 
-  public getModel(key: string) {
-    const path = this.modelMap.has(key);
+  public async getModel(key: string) {
+    return await this.FBXLoader.loadAsync(key) ?? new Group();
 
-    if (!path) {
-      throw new Error(`${key} not found`);
-    } // TODO: throw error
-    return this.modelMap.get(key) ?? new Group();
+    // if (!path) {
+    //   throw new Error(`${key} not found`);
+    // } // TODO: throw error
+    // return this.modelMap.get(key) ?? new Group();
   }
 
   public async getTexture(key: string) {

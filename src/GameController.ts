@@ -20,9 +20,6 @@ class GameController {
 
   public direction: THREE.Vector3;
 
-  // Used by onKeyDown and onKeyUp because this keyword is different when the event comes from window
-  private _this = this;
-
   constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer) {
     window.addEventListener('keydown', this.onKeyDown.bind(this)); // bind is used to set the this keyword, because if we don't, this keyword will be window
     window.addEventListener('keyup', this.onKeyUp.bind(this));

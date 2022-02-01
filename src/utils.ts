@@ -1,5 +1,8 @@
+/* eslint-disable import/extensions */
+/* eslint-disable import/no-unresolved */
 import { Vector3 } from 'three';
 import dat from 'dat.gui';
+import { Message } from './interfaces/Message';
 
 /**
  * Convert a Vector3 to a string, also edit precision
@@ -24,4 +27,42 @@ function addVecToMenu(gui: dat.GUI, vec: Vector3, name: string): void {
   folder.add(vec, 'z', -100, 100);
 }
 
-export { prepareVec3, addVecToMenu };
+/**
+ * Used to manimulate x y z
+ * @param {dat.GUI} gui
+ * @param {Vector3} vec
+ * @param {string} name
+ * @return {void}
+ */
+function addArrToMenu(gui: dat.GUI, vec: Vector3, name: string): void {
+  const folder = gui.addFolder(name);
+  folder.add(vec, 'x', -100, 100);
+  folder.add(vec, 'y', -100, 100);
+  folder.add(vec, 'z', -100, 100);
+}
+
+/**
+ * Convert a key value object to a ArrayBuffer
+ * @param {Message} obj
+ * @returns {ArrayBufferLike}
+ */
+const objectToBuffer = (obj: Message): ArrayBufferLike => {
+  const encoder = new TextEncoder();
+  return encoder.encode(JSON.stringify(obj)).buffer;
+};
+
+/**
+ * Convert an ArrayBuffer to a key value object
+ * @param {ArrayBuffer} obj
+ * @returns {any}
+ */
+const BufferToObject = (obj: ArrayBuffer): Message => {
+  const encoder = new TextDecoder();
+  const payload = encoder.decode(obj);
+  const message: Message = JSON.parse(payload);
+  return message;
+};
+
+export {
+  prepareVec3, addVecToMenu, addArrToMenu, objectToBuffer, BufferToObject,
+};

@@ -1,8 +1,16 @@
+/* eslint-disable import/extensions */
+/* eslint-disable import/no-unresolved */
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 import * as THREE from 'three';
+import { Vector3 } from 'three';
 import GameController from './GameController';
 import Character from './Character';
 import Assets from './Assets';
+import { BufferToObject, prepareVec3 } from './utils';
+import { Message } from './interfaces/Message';
+import Backend from './Backend';
+import IUser from './interfaces/User';
 
 class Game {
   public renderer: THREE.WebGLRenderer;
@@ -19,20 +27,32 @@ class Game {
 
   private clock: THREE.Clock;
 
-  private GameController: GameController;
+  public GameController: GameController;
 
   public Character?: Character;
+
+  public Character2?: Character; // to remove
+
+  private lastVecFromSRVCLient2: THREE.Vector3; // to remove
+
+  private lastDirFromSRVCLient2: THREE.Euler; // to remove
 
   public assets?: Assets;
 
   private previousTime: number;
 
+  private raycaster: THREE.Raycaster;
+
+  private backend: Backend;
+
+  private lastPosition?: string;
+
   constructor() {
     this.renderer = this.setupRenderer();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.camera.position.x = 5;
+    this.camera.position.x = 0;
     this.camera.position.y = 20;
-    this.camera.position.z = 60;
+    this.camera.position.z = 0;
 
     this.scene = new THREE.Scene();
     [this.ambiantLight, this.light] = this.setupLights();
@@ -40,8 +60,17 @@ class Game {
     this.clock = new THREE.Clock();
     this.previousTime = 0;
 
+    this.raycaster = new THREE.Raycaster();
+
     this.GameController = new GameController(this.camera, this.renderer);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
+    this.lastVecFromSRVCLient2 = new Vector3(0, 0, 0); // to remove
+    this.lastDirFromSRVCLient2 = new THREE.Euler(0, 0, 0); // to remove
+    this.backend = new Backend(this);
+  }
+
+  private get currentUser() : IUser {
+    return this.backend.user;
   }
 
   private onWindowResize() {
@@ -59,11 +88,31 @@ class Game {
     this.Character = new Character(ped);
     this.scene.add(this.Character.ped);
     this.mixers.push(this.Character.mixer);
+
+    this.lastPosition = prepareVec3(this.Character.ped.position.clone());
   }
 
   public startGame() {
     if (!this.Character) return;
     this.renderScene();
+  }
+
+  public async processMessage(m: MessageEvent) {
+    const message: Blob = m.data;
+    const data = await message.arrayBuffer();
+    // eslint-disable-next-line no-underscore-dangle
+    const _message: Message = BufferToObject(data);
+
+    const payload = _message.data;
+    switch (_message.type) {
+      case 'res_PositionAndDir':
+        this.lastVecFromSRVCLient2 = new THREE.Vector3(...payload.position);
+        this.lastDirFromSRVCLient2 = new THREE.Euler(...payload.rotation);
+        break;
+
+      default:
+        break;
+    }
   }
 
   private renderScene(): void {
@@ -104,15 +153,46 @@ class Game {
         this.GameController.velocity.y = 0;
       }
 
-      const camPos = this.GameController.controls.getObject().position;
+      // Ch33_Eyelashes
+      //   const eyes = this.Character.ped.getObjectByName('Ch33_Eyelashes');
 
-      // if (lastPosition.x === 0) {
-      this.Character.ped.position.x = camPos.x;
-      this.Character.ped.position.y = camPos.y;
+      const camerafdp = this.GameController.controls.getObject();
+      const pointer = new THREE.Vector2(0, 0);
+
+      // Updates the ray with a new origin and direction. //
+      this.raycaster.setFromCamera(pointer, camerafdp); // il dirige le rayon a partir de la camera vers le centre de l'ecran
+
+      this.Character.ped.setRotationFromEuler(
+        camerafdp.rotation,
+      );
+
+      this.Character.ped.position.x = camerafdp.position.x + 2;
       // character.position.y = character.geometry.parameters.height / 2;
-      this.Character.ped.position.z = camPos.z;
-      // character.position.z = camPos.z + 30;
-      // }
+      this.Character.ped.position.z = camerafdp.position.z + 2;
+
+      if (this.lastPosition !== prepareVec3(this.Character.ped.position.clone())) {
+        const toSend = {
+          type: 'PositionAndDir',
+          position: this.Character.ped.position.toArray(),
+          rotation: camerafdp.rotation.toArray(),
+        };
+
+        const message: Message = {
+          type: toSend.type,
+          data: toSend,
+        };
+        this.backend.sendMessage(message);
+      }
+    }
+
+    if (this.Character2) {
+      this.Character2.ped.position.x = this.lastVecFromSRVCLient2.x;
+      this.Character2.ped.position.y = this.lastVecFromSRVCLient2.y;
+      this.Character2.ped.position.z = this.lastVecFromSRVCLient2.z;
+
+      this.Character2.ped.setRotationFromEuler(
+        this.lastDirFromSRVCLient2,
+      );
     }
 
     requestAnimationFrame(this.renderScene.bind(this));

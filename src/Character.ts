@@ -24,7 +24,9 @@ class Character {
       action.play();
     }
 
-    ped.scale.set(0.05, 0.05, 0.05);
+    ped.scale.set(0.15, 0.15, 0.15);
+    ped.position.set(0, 0, 0);
+
     this.ped = ped;
     this.mixer = mixer;
   }
