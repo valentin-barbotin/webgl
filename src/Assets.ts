@@ -1,11 +1,22 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable no-underscore-dangle */
-import { Texture, TextureLoader } from 'three';
+import { Group, Texture, TextureLoader } from 'three';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import EventEmitter from 'events';
 
 class Assets {
   private textureMap: Map<string, Texture>;
+
+  private modelMap: Map<string, Group>;
   //   private modelsMap: Map<string, string>;
 
   private TextureLoader: TextureLoader;
+
+  private FBXLoader: FBXLoader;
+
+  private texturesLoaded: number = 0;
+
+  private modelsLoaded: number = 0;
 
   public textureList = {
     concrete: '/dist/assets/concrete.jpg',
@@ -15,26 +26,69 @@ class Assets {
     marble: '/dist/assets/marble.jpg',
   };
 
+  public modelList = {
+    boug: '/dist/assets/boug.fbx',
+  };
+
   constructor() {
     this.textureMap = new Map<string, Texture>();
+    this.modelMap = new Map<string, Group>();
     this.TextureLoader = new TextureLoader();
-    // 3Ds
-
-    // Textures
-    const soundLoadingTime = performance.now();
-    Object.values(this.textureList).forEach((value) => {
-      this.textureMap.set(value, this.TextureLoader.load(value));
-    });
-    console.log(`${performance.now() - soundLoadingTime} ms to load textures`);
+    this.FBXLoader = new FBXLoader();
+    this.texturesLoaded = Object.keys(this.textureList).length;
+    this.modelsLoaded = Object.keys(this.modelList).length;
   }
 
-  public async getTexture(key: string): Promise<Texture> {
+  public async setup() {
+    const Tracker = new EventEmitter();
+    // 3Ds
+    const modelLoadingTime = performance.now();
+    Object.values(this.modelList).forEach(async (value) => {
+      const data = await this.FBXLoader.loadAsync(value);
+      this.modelMap.set(value, data);
+      this.modelsLoaded--;
+      Tracker.emit('processed');
+      console.log(value, 'loaded');
+    });
+    console.log(`${performance.now() - modelLoadingTime} ms to load models`);
+
+    // Textures
+    const textureLoadingTime = performance.now();
+    Object.values(this.textureList).forEach(async (value) => {
+      const data = await this.TextureLoader.loadAsync(value);
+      this.textureMap.set(value, data);
+      this.texturesLoaded--;
+      Tracker.emit('processed');
+      console.log(value, 'loaded');
+    });
+    console.log(`${performance.now() - textureLoadingTime} ms to load textures`);
+
+    await new Promise<void>((resolve) => {
+      Tracker.on('processed', () => {
+        if (this.modelsLoaded === 0 && this.texturesLoaded === 0) {
+          resolve();
+        }
+      });
+    });
+  }
+
+  public getModel(key: string) {
+    const path = this.modelMap.has(key);
+
+    if (!path) {
+      throw new Error(`${key} not found`);
+    } // TODO: throw error
+    return this.modelMap.get(key) ?? new Group();
+  }
+
+  public async getTexture(key: string) {
+    console.log(this.textureMap.keys());
     const path = this.textureMap.has(key);
 
     if (!path) {
       throw new Error(`${key} not found`);
     } // TODO: throw error
-    return this.TextureLoader.loadAsync(key, (texture: ProgressEvent<EventTarget>) => {});
+    return this.textureMap.get(key) ?? new Texture();
   }
 }
 

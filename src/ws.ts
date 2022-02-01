@@ -69,7 +69,7 @@ function getClient2Pos() {
   return lastVecFromSRVCLient2;
 }
 
-const ws = new WebSocket('ws://192.168.1.162:5000');
+const ws = new WebSocket('ws://kazu.freeboxos.fr:5000');
 ws.onmessage = (m) => processMessage(ws, m);
 ws.onclose = disconnected;
 

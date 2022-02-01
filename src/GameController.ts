@@ -16,6 +16,10 @@ class GameController {
 
   public _controls: PointerLockControls;
 
+  public velocity: THREE.Vector3;
+
+  public direction: THREE.Vector3;
+
   // Used by onKeyDown and onKeyUp because this keyword is different when the event comes from window
   private _this = this;
 
@@ -24,9 +28,9 @@ class GameController {
     window.addEventListener('keyup', this.onKeyUp.bind(this));
 
     this._controls = new PointerLockControls(camera, renderer.domElement);
-    console.log(this._controls);
-    console.log(`is locked = ${this._controls.isLocked}`);
-    console.log(`is locked2 = ${this.controls.isLocked}`);
+
+    this.velocity = new THREE.Vector3();
+    this.direction = new THREE.Vector3();
   }
 
   public get moveForward() : boolean { return this._moveForward; }
