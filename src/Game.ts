@@ -111,8 +111,7 @@ class Game {
     const data = await message.arrayBuffer();
     // eslint-disable-next-line no-underscore-dangle
     const _message: Message = <Message>BufferToObject(data);
- 
-    console.warn(_message);
+
     switch (_message.type) {
       case 'userQuit': {
         const payload = _message.data as IUser;
