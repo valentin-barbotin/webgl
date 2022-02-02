@@ -249,11 +249,13 @@ class Game {
     //   mixer.update(clockDelta);
     // }
 
-    this.currentUser.character?.mixer?.update(this.clock.getDelta());
+    const clockDelta = this.clock.getDelta();
+
+    this.currentUser.character?.mixer?.update(clockDelta);
 
     this.players.forEach((player) => {
       const ped = player.getPed();
-      player.character?.mixer.update(this.clock.getDelta());
+      player.character?.mixer.update(clockDelta);
       if (ped) {
         ped.setRotationFromEuler(ped.rotation);
       }
