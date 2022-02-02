@@ -1,16 +1,25 @@
 /* eslint-disable import/extensions */
 /* eslint-disable import/no-unresolved */
-import { Vector3 } from 'three';
+import { Vector3, Vector3Tuple } from 'three';
 import dat from 'dat.gui';
-import { Message } from './interfaces/Message';
+import { IMessageWithoutID, Message } from './interfaces/Message';
 
 /**
- * Convert a Vector3 to a string, also edit precision
+ * Convert a Vector3 to a string
  * @param {Vector3} vec3
  * @returns {string} Vec3 as a string
  */
-function prepareVec3(vec3: Vector3): string {
-  return vec3.toArray().map((v) => v.toFixed(20)).map((v) => parseFloat(v)).toString();
+function prepareVec3(vec3: Vector3Tuple): string {
+  return vec3.toString();
+}
+
+/**
+ * Reduce a Vector3 precision
+ * @param {Vector3} vec3
+ * @returns {Vector3Tuple} Vector3Tuple
+ */
+function reduceVec3(vec3: Vector3): Vector3Tuple {
+  return vec3.toArray().map((v) => parseFloat(v.toFixed(3))) as Vector3Tuple;
 }
 
 /**
@@ -46,7 +55,7 @@ function addArrToMenu(gui: dat.GUI, vec: Vector3, name: string): void {
  * @param {Message} obj
  * @returns {ArrayBufferLike}
  */
-const objectToBuffer = (obj: Message): ArrayBufferLike => {
+const objectToBuffer = (obj: IMessageWithoutID): ArrayBufferLike => {
   const encoder = new TextEncoder();
   return encoder.encode(JSON.stringify(obj)).buffer;
 };
@@ -56,7 +65,7 @@ const objectToBuffer = (obj: Message): ArrayBufferLike => {
  * @param {ArrayBuffer} obj
  * @returns {any}
  */
-const BufferToObject = (obj: ArrayBuffer): Message => {
+const BufferToObject = (obj: ArrayBuffer): IMessageWithoutID => {
   const encoder = new TextDecoder();
   const payload = encoder.decode(obj);
   const message: Message = JSON.parse(payload);
@@ -64,5 +73,5 @@ const BufferToObject = (obj: ArrayBuffer): Message => {
 };
 
 export {
-  prepareVec3, addVecToMenu, addArrToMenu, objectToBuffer, BufferToObject,
+  prepareVec3, reduceVec3, addVecToMenu, addArrToMenu, objectToBuffer, BufferToObject,
 };

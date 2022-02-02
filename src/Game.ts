@@ -4,12 +4,11 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 import * as THREE from 'three';
-import { Vector3 } from 'three';
 import GameController from './GameController';
 import Character from './Character';
 import Assets from './Assets';
-import { BufferToObject, prepareVec3 } from './utils';
-import { IMessageSync, Message } from './interfaces/Message';
+import { BufferToObject, prepareVec3, reduceVec3 } from './utils';
+import { IMessageSync, Message, IMessageWithoutID } from './interfaces/Message';
 import Backend from './Backend';
 import IUser from './interfaces/User';
 
@@ -32,12 +31,6 @@ class Game {
 
   public Character?: Character;
 
-  public Character2?: Character; // to remove
-
-  private lastVecFromSRVCLient2: THREE.Vector3; // to remove
-
-  private lastDirFromSRVCLient2: THREE.Euler; // to remove
-
   public assets?: Assets;
 
   private previousTime: number;
@@ -46,7 +39,9 @@ class Game {
 
   private backend: Backend;
 
-  private lastPosition?: string;
+  private lastPosition?: THREE.Vector3Tuple;
+
+  private lastRotation?: THREE.Vector3Tuple;
 
   private players: Map<string, IUser>;
 
@@ -69,8 +64,6 @@ class Game {
 
     this.GameController = new GameController(this.camera, this.renderer);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
-    this.lastVecFromSRVCLient2 = new Vector3(0, 0, 0); // to remove
-    this.lastDirFromSRVCLient2 = new THREE.Euler(0, 0, 0); // to remove
     this.backend = new Backend(this);
   }
 
@@ -93,12 +86,23 @@ class Game {
     this.Character = new Character(ped);
     this.scene.add(this.Character.ped);
     this.mixers.push(this.Character.mixer);
+    this.backend.user.character = this.Character;
+    this.backend.user.getPed = () => this.Character?.ped;
 
-    this.lastPosition = prepareVec3(this.Character.ped.position.clone());
+    const reduction = {
+      reducedPos: reduceVec3(this.Character.ped.position),
+      reducedRot: reduceVec3(ped.rotation.toVector3()),
+    };
+
+    this.lastPosition = reduction.reducedPos;
+    this.lastRotation = reduction.reducedRot;
   }
 
   public startGame() {
     if (!this.Character) return;
+
+    //this.getExistingPlayers(); TODO: get existing players
+
     this.renderScene();
   }
 
@@ -106,31 +110,57 @@ class Game {
     const message: Blob = m.data;
     const data = await message.arrayBuffer();
     // eslint-disable-next-line no-underscore-dangle
-    const _message: Message = BufferToObject(data);
-
+    const _message: Message = <Message>BufferToObject(data);
+ 
+    console.warn(_message);
     switch (_message.type) {
       case 'userQuit': {
         const payload = _message.data as IUser;
-        this.players.delete(payload.id);
+        const user = this.players.get(_message.id);
+        if (!user) throw new Error('User doesn\'t exists'); // wtf
+        const ped = user.getPed();
+        if (!ped) throw new Error('Ped not found');
+        ped.clear();
+        ped.remove();
+        ped.visible = false;
+
+        if (!this.players.delete(payload.id)) {
+          throw new Error('User not found');
+        };
         console.log(`${payload.name} quited`);
         break;
       }
       case 'userJoined': {
         const payload = _message.data as IUser;
-        const exists = this.players.get(payload.id);
+
+        if (!payload.name || !_message.id) {
+          throw new Error('Invalid payload');
+        }
+
+        const exists = this.players.get(_message.id);
         if (exists) throw new Error('User already exists'); // wtf
 
         const model = await this.assets?.getModel(this.assets.modelList.boug);
         if (!model) throw new Error('User already exists');
         payload.character = new Character(model);
-        this.players.set(payload.id, payload);
-        console.log(`${payload.name} joined`);
+        // this.mixers.push(payload.character.mixer);
+        payload.getPed = () => payload.character?.ped;
+        this.scene.add(payload.character.ped);
+        this.players.set(_message.id, payload);
+
+        console.log(`${payload.name} joined the game`);
         break;
       }
-      case 'res_PositionAndDir': {
+      case 'userSyncPos': {
         const payload = _message.data as IMessageSync;
-        this.lastVecFromSRVCLient2 = new THREE.Vector3(...payload.position);
-        this.lastDirFromSRVCLient2 = new THREE.Euler(...payload.rotation);
+        const user = this.players.get(_message.id);
+
+        if (!user) throw new Error('User not found');
+
+        const ped = user.getPed();
+        if (!ped) throw new Error('Ped not found');
+        ped.position.fromArray(payload.position);
+        ped.rotation.fromArray(payload.rotation);
         break;
       }
 
@@ -144,12 +174,6 @@ class Game {
     this.light.target.updateMatrixWorld();
     this.light.shadow.camera.updateProjectionMatrix();
     // helper.update();
-
-    // eslint-disable-next-line no-restricted-syntax
-    for (const mixer of this.mixers) {
-      const clockDelta = this.clock.getDelta();
-      mixer.update(clockDelta);
-    }
 
     const mass = 80;
     const time = performance.now();
@@ -186,46 +210,72 @@ class Game {
       // Updates the ray with a new origin and direction. //
       this.raycaster.setFromCamera(pointer, camera); // il dirige le rayon a partir de la camera vers le centre de l'ecran
 
-      this.Character.ped.setRotationFromEuler(
-        camera.rotation,
-      );
+      const ped = this.currentUser.getPed();
 
-      this.Character.ped.position.x = camera.position.x + 2;
-      // character.position.y = character.geometry.parameters.height / 2;
-      this.Character.ped.position.z = camera.position.z + 2;
+      if (ped) {
+        let goSync = false;
+        ped.setRotationFromEuler(
+          camera.rotation,
+        );
 
-      if (this.lastPosition !== prepareVec3(this.Character.ped.position.clone())) {
-        this.syncCharacter(this.Character);
+        ped.position.x = camera.position.x + 2;
+        // character.position.y = character.geometry.parameters.height / 2;
+        ped.position.z = camera.position.z + 2;
+        const pedPos = ped.position.clone();
+
+        const reduction = {
+          reducedPos: reduceVec3(pedPos),
+          reducedRot: reduceVec3(ped.rotation.toVector3()),
+        };
+
+        const preparedVec3Pos = prepareVec3(reduction.reducedPos);
+        const preparedVec3Rotation = prepareVec3(reduction.reducedRot);
+        if (this.lastPosition && prepareVec3(this.lastPosition) !== preparedVec3Pos) {
+          goSync = true;
+        }
+
+        if (this.lastRotation && prepareVec3(this.lastRotation) !== preparedVec3Rotation) {
+          goSync = true;
+        }
+        this.lastPosition = reduction.reducedPos;
+        this.lastRotation = reduction.reducedRot;
+        if (goSync) this.syncCharacter();
       }
     }
 
-    if (this.Character2) {
-      this.Character2.ped.position.x = this.lastVecFromSRVCLient2.x;
-      this.Character2.ped.position.y = this.lastVecFromSRVCLient2.y;
-      this.Character2.ped.position.z = this.lastVecFromSRVCLient2.z;
+    // // eslint-disable-next-line no-restricted-syntax
+    // for (const mixer of this.mixers) {
+    //   const clockDelta = this.clock.getDelta();
+    //   mixer.update(clockDelta);
+    // }
 
-      this.Character2.ped.setRotationFromEuler(
-        this.lastDirFromSRVCLient2,
-      );
-    }
+    this.currentUser.character?.mixer?.update(this.clock.getDelta());
+
+    this.players.forEach((player) => {
+      const ped = player.getPed();
+      player.character?.mixer.update(this.clock.getDelta());
+      if (ped) {
+        ped.setRotationFromEuler(ped.rotation);
+      }
+    });
 
     requestAnimationFrame(this.renderScene.bind(this));
     this.renderer.render(this.scene, this.camera);
     this.previousTime = time;
   }
 
-  private syncCharacter(character: Character) {
+  private syncCharacter() {
     if (!this.Character) {
       throw new Error('Character is not set');
     }
 
     const toSend = {
-      type: 'PositionAndDir',
-      position: character.ped.position.toArray(),
-      rotation: this.camera.rotation.toArray(),
+      type: 'userSyncPos',
+      position: this.lastPosition,
+      rotation: this.lastRotation,
     };
 
-    const message: Message = {
+    const message: IMessageWithoutID = {
       type: toSend.type,
       data: toSend,
     };

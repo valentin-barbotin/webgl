@@ -14,11 +14,15 @@ interface IMessageSync {
 
 interface IMessageNewUserJoined extends IUser {}
 
-interface Message {
+interface IMessageWithoutID {
     type: string;
     data: IMessageNewUserJoined | {[k: string]: any};
 }
 
+interface Message extends IMessageWithoutID {
+    id: string,
+}
+
 export {
-  Message, MessageData, IMessageNewUserJoined, IMessageSync,
+  Message, MessageData, IMessageNewUserJoined, IMessageSync, IMessageWithoutID,
 };

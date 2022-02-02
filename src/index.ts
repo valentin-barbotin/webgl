@@ -9,12 +9,9 @@
 import * as THREE from 'three';
 import { Vector, Vector3, Vector3Tuple } from 'three';
 import dat from 'dat.gui';
-import GameController from './GameController';
 import Assets from './Assets';
 import Game from './Game';
 import { addVecToMenu } from './utils';
-import Character from './Character';
-import Backend from './Backend';
 
 const groundSize = 80;
 
@@ -25,10 +22,6 @@ const groundSize = 80;
   game.assets = assets;
   game.setCharacter(await assets.getModel(game.assets.modelList.boug));
   game.startGame();
-
-  game.Character2 = new Character(await game.assets.getModel(game.assets.modelList.boug));
-  game.scene.add(game.Character2.ped);
-  game.mixers.push(game.Character2.mixer);
 
   const ground = new THREE.Mesh(
     new THREE.BoxGeometry(groundSize * 10, 1, groundSize * 10),

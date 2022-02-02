@@ -3,7 +3,7 @@
 /* eslint-disable import/no-unresolved */
 /* eslint-disable class-methods-use-this */
 import Game from './Game';
-import { Message } from './interfaces/Message';
+import { IMessageWithoutID, Message } from './interfaces/Message';
 import IUser from './interfaces/User';
 import { objectToBuffer } from './utils';
 import gameConfig from './config/config';
@@ -26,35 +26,37 @@ class Backend {
     this.password = window.prompt('Enter your password', 'password') ?? 'password';
 
     this.user = {
-      id: username,
+      id: '',
       name: username,
+      getPed: () => this.user.character?.ped,
     };
 
     // this.roomID = window.prompt('Enter choose a room');
   }
 
   private loginWithBackend() {
-    if (this.endpoint?.readyState === this.endpoint?.OPEN) return;
     this.endpoint = new WebSocket(`ws://${gameConfig.hostname}:${gameConfig.port}`);
-    this.endpoint.onclose = this.onDisconnect;
-    this.endpoint.onopen = this.connected;
-    this.endpoint.onmessage = (m) => this.game.processMessage.call(this.game.processMessage, m);
+    this.endpoint.onclose = (ev) => this.onDisconnect.call(this, ev);
+    this.endpoint.onopen = (ev) => this.connected.call(this, ev);
+    this.endpoint.onmessage = (m) => this.game.processMessage.call(this.game, m);
   }
 
-  private onDisconnect() {
+  private onDisconnect(ev: Event) {
     if (!this.endpoint) return;
     console.log('Disconnected');
-    this.endpoint.close();
-    setInterval(
-      () => this.loginWithBackend.call(this),
-      5000,
-    );
+    console.log('Trying to reconnect to backend');
+    this.loginWithBackend();
+    // this.endpoint.close();
+    // setInterval(
+    //   () => this.loginWithBackend.call(this),
+    //   5000,
+    // );
   }
 
-  private connected() {
+  private connected(ev: Event) {
     if (!this.endpoint) return;
     if (this.endpoint.readyState === this.endpoint.OPEN) {
-      const response: Message = {
+      const response: IMessageWithoutID = {
         type: 'login',
         data: {
           user: this.user,
@@ -77,7 +79,7 @@ class Backend {
 //     // return false;
 //   }
 
-  public sendMessage(message: Message) {
+  public sendMessage(message: IMessageWithoutID) {
     if (!this.endpoint) return;
     if (this.endpoint.readyState !== this.endpoint.OPEN) {
       throw new Error("Can't send message, endpoint is not open");
