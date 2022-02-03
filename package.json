@@ -5,12 +5,15 @@
   "main": "script.js",
   "scripts": {
     "test": "mocha test",
-    "build": "npx webpack"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "author": "",
   "type": "commonjs",
   "license": "ISC",
   "devDependencies": {
+    "vite": "^2.7.2",
     "@types/dat.gui": "^0.7.7",
     "@types/gl-matrix": "^3.2.0",
     "@types/live-server": "^1.2.1",
