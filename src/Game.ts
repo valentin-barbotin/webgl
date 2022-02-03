@@ -4,6 +4,7 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 import * as THREE from 'three';
+import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import GameController from './GameController';
 import Character from './Character';
 import Assets from './Assets';
@@ -81,17 +82,17 @@ class Game {
     this.assets = assets;
   }
 
-  public setCharacter(ped: THREE.Group) {
+  public setCharacter(ped: GLTF) {
     if (!this.assets) return;
     this.Character = new Character(ped);
-    this.scene.add(this.Character.ped);
+    this.scene.add(this.Character.ped.scene);
     this.mixers.push(this.Character.mixer);
     this.backend.user.character = this.Character;
-    this.backend.user.getPed = () => this.Character?.ped;
+    this.backend.user.getPed = () => this.Character?.ped.scene;
 
     const reduction = {
-      reducedPos: reduceVec3(this.Character.ped.position),
-      reducedRot: reduceVec3(ped.rotation.toVector3()),
+      reducedPos: reduceVec3(this.Character.ped.scene.position),
+      reducedRot: reduceVec3(ped.scene.rotation.toVector3()),
     };
 
     this.lastPosition = reduction.reducedPos;
@@ -125,7 +126,7 @@ class Game {
 
         if (!this.players.delete(payload.id)) {
           throw new Error('User not found');
-        };
+        }
         console.log(`${payload.name} quited`);
         break;
       }
@@ -143,8 +144,8 @@ class Game {
         if (!model) throw new Error('User already exists');
         payload.character = new Character(model);
         // this.mixers.push(payload.character.mixer);
-        payload.getPed = () => payload.character?.ped;
-        this.scene.add(payload.character.ped);
+        payload.getPed = () => payload.character?.ped.scene;
+        this.scene.add(payload.character.ped.scene);
         this.players.set(_message.id, payload);
 
         console.log(`${payload.name} joined the game`);
@@ -217,9 +218,9 @@ class Game {
           camera.rotation,
         );
 
-        ped.position.x = camera.position.x + 2;
+        ped.position.x = camera.position.x + 4;
         // character.position.y = character.geometry.parameters.height / 2;
-        ped.position.z = camera.position.z + 2;
+        ped.position.z = camera.position.z + 4;
         const pedPos = ped.position.clone();
 
         const reduction = {

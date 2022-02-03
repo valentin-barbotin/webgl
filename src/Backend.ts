@@ -28,7 +28,7 @@ class Backend {
     this.user = {
       id: '',
       name: username,
-      getPed: () => this.user.character?.ped,
+      getPed: () => this.user.character?.ped.scene,
     };
 
     // this.roomID = window.prompt('Enter choose a room');

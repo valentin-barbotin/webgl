@@ -35,7 +35,7 @@ const groundSize = 80;
 
   const gui = new dat.GUI();
   if (!game.Character) return;
-  addVecToMenu(gui, game.Character.ped.scale, 'Scale');
-  addVecToMenu(gui, game.Character.ped.position, 'Position');
+  addVecToMenu(gui, game.Character.ped.scene.scale, 'Scale');
+  addVecToMenu(gui, game.Character.ped.scene.position, 'Position');
   addVecToMenu(gui, game.GameController.controls.getObject().position, 'Position (camera)');
 })();

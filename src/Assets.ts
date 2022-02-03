@@ -1,7 +1,7 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable no-underscore-dangle */
 import { Group, Texture, TextureLoader } from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import EventEmitter from 'events';
 
 class Assets {
@@ -12,7 +12,7 @@ class Assets {
 
   private TextureLoader: TextureLoader;
 
-  private FBXLoader: FBXLoader;
+  private GLTFLoader: GLTFLoader;
 
   private texturesLoaded: number = 0;
 
@@ -25,7 +25,8 @@ class Assets {
   };
 
   public modelList = {
-    boug: '/dist/assets/boug3.fbx',
+    boug: '/dist/assets/player.gltf',
+    // boug: '/dist/assets/boug3.fbx',
     Capoeira: '/dist/assets/Capoeira.fbx',
   };
 
@@ -33,7 +34,7 @@ class Assets {
     this.textureMap = new Map<string, Texture>();
     this.modelMap = new Map<string, Group>();
     this.TextureLoader = new TextureLoader();
-    this.FBXLoader = new FBXLoader();
+    this.GLTFLoader = new GLTFLoader();
     this.texturesLoaded = Object.keys(this.textureList).length;
   }
 
@@ -60,7 +61,7 @@ class Assets {
   }
 
   public async getModel(key: string) {
-    return await this.FBXLoader.loadAsync(key) ?? new Group();
+    return this.GLTFLoader.loadAsync(key);
 
     // if (!path) {
     //   throw new Error(`${key} not found`);
