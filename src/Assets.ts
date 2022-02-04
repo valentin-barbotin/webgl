@@ -17,16 +17,16 @@ class Assets {
   private texturesLoaded: number = 0;
 
   public textureList = {
-    concrete: '/dist/assets/concrete.jpg',
-    grass: '/dist/assets/grass.png',
-    dirt: '/dist/assets/dirt.jpg',
-    dirtGrass: '/dist/assets/dirtgrass.jpg',
-    marble: '/dist/assets/marble.jpg',
+    concrete: '/assets/concrete.jpg',
+    grass: '/assets/grass.png',
+    dirt: '/assets/dirt.jpg',
+    dirtGrass: '/assets/dirtgrass.jpg',
+    marble: '/assets/marble.jpg',
   };
 
   public modelList = {
-    boug: '/dist/assets/boug3.fbx',
-    Capoeira: '/dist/assets/Capoeira.fbx',
+    boug: '/assets/boug3.fbx',
+    Capoeira: '/assets/Capoeira.fbx',
   };
 
   constructor() {
