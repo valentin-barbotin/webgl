@@ -29,6 +29,7 @@
     "vite": "^2.7.2"
   },
   "dependencies": {
+    "ammojs-typed": "^1.0.6",
     "dat.gui": "^0.7.7",
     "events": "^3.3.0",
     "live-server": "^1.2.1",

@@ -1,3 +1,4 @@
+/* eslint-disable new-cap */
 /* eslint-disable no-case-declarations */
 /* eslint-disable import/extensions */
 /* eslint-disable import/no-unresolved */
@@ -5,6 +6,7 @@
 /* eslint-disable max-len */
 import * as THREE from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import Ammo from 'ammojs-typed';
 import GameController from './GameController';
 import Character from './Character';
 import Assets from './Assets';
@@ -14,6 +16,7 @@ import Backend from './Backend';
 import IUser from './interfaces/User';
 import User from './User';
 
+type Ammo = typeof Ammo;
 class Game {
   public renderer: THREE.WebGLRenderer;
 
@@ -46,6 +49,8 @@ class Game {
   private lastRotation?: THREE.Vector3Tuple;
 
   private players: Map<string, User>;
+
+  private ammo: Ammo;
 
   constructor(assets: Assets) {
     this.renderer = this.setupRenderer();
@@ -342,8 +347,9 @@ class Game {
     return [ambiantLight, light];
   }
 
-
-
+  public setupAmmo(ammo: Ammo) {
+    this.ammo = ammo;
+  }
 
   /**
    * Called when a player quit

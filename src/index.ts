@@ -1,3 +1,4 @@
+/* eslint-disable new-cap */
 /* eslint-disable import/no-unresolved */
 /* eslint-disable import/extensions */
 /* eslint-disable import/no-extraneous-dependencies */
@@ -11,6 +12,7 @@ import {
   Scene, Vector, Vector2, Vector3, Vector3Tuple,
 } from 'three';
 import dat from 'dat.gui';
+import Ammo from 'ammojs-typed';
 import Assets from './Assets';
 import Game from './Game';
 import { addVecToMenu } from './utils';
@@ -79,6 +81,11 @@ async function createSkybox(game: Game): Promise<void> {
   game.setCharacter(await assets.getModel(game.assets.modelList.meuf));
   // start rendering
   game.startGame();
+
+  if (Object.prototype.hasOwnProperty.call(window, 'Ammo')) {
+    const _ammo: typeof Ammo = await window['Ammo']();
+    game.setupAmmo(_ammo);
+  }
 
   // Add the gui
   const gui = new dat.GUI();
