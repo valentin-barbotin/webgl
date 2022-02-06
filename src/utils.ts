@@ -2,7 +2,7 @@
 /* eslint-disable import/no-unresolved */
 import { Vector3, Vector3Tuple } from 'three';
 import dat from 'dat.gui';
-import { IMessageWithoutID, Message } from './interfaces/Message';
+import { IMessage } from './interfaces/Message';
 
 /**
  * Convert a Vector3 to a string
@@ -52,10 +52,10 @@ function addArrToMenu(gui: dat.GUI, vec: Vector3, name: string): void {
 
 /**
  * Convert a key value object to a ArrayBuffer
- * @param {Message} obj
+ * @param {IMessage} obj
  * @returns {ArrayBufferLike}
  */
-const objectToBuffer = (obj: IMessageWithoutID): ArrayBufferLike => {
+const objectToBuffer = (obj: IMessage): ArrayBufferLike => {
   const encoder = new TextEncoder();
   return encoder.encode(JSON.stringify(obj)).buffer;
 };
@@ -65,10 +65,10 @@ const objectToBuffer = (obj: IMessageWithoutID): ArrayBufferLike => {
  * @param {ArrayBuffer} obj
  * @returns {any}
  */
-const BufferToObject = (obj: ArrayBuffer): IMessageWithoutID => {
+const BufferToObject = (obj: ArrayBuffer): IMessage => {
   const encoder = new TextDecoder();
   const payload = encoder.decode(obj);
-  const message: Message = JSON.parse(payload);
+  const message: IMessage = JSON.parse(payload);
   return message;
 };
 

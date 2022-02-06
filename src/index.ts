@@ -20,7 +20,7 @@ const groundSize = 80;
   await assets.setup();
   const game = new Game();
   game.assets = assets;
-  game.setCharacter(await assets.getModel(game.assets.modelList.boug));
+  game.setCharacter(await assets.getModel(game.assets.modelList.meuf));
   game.startGame();
 
   const ground = new THREE.Mesh(

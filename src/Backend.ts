@@ -3,7 +3,7 @@
 /* eslint-disable import/no-unresolved */
 /* eslint-disable class-methods-use-this */
 import Game from './Game';
-import { IMessageWithoutID, Message } from './interfaces/Message';
+import { IMessage } from './interfaces/Message';
 import IUser from './interfaces/User';
 import { objectToBuffer } from './utils';
 import gameConfig from './config/config';
@@ -23,11 +23,13 @@ class Backend {
     this.game = game;
     this.loginWithBackend();
     const username = window.prompt('Enter your name', 'Anonymous') ?? 'Anonymous';
-    this.password = window.prompt('Enter your password', 'password') ?? 'password';
+    // this.password = window.prompt('Enter your password', 'password') ?? 'password';
+    // const username = 'Anonymous';
+    this.password = 'password';
 
     this.user = {
-      id: '',
-      name: username,
+      _id: '',
+      _name: username,
       getPed: () => this.user.character?.ped.scene,
     };
 
@@ -45,7 +47,7 @@ class Backend {
     if (!this.endpoint) return;
     console.log('Disconnected');
     console.log('Trying to reconnect to backend');
-    this.loginWithBackend();
+    // this.loginWithBackend();
     // this.endpoint.close();
     // setInterval(
     //   () => this.loginWithBackend.call(this),
@@ -56,10 +58,13 @@ class Backend {
   private connected(ev: Event) {
     if (!this.endpoint) return;
     if (this.endpoint.readyState === this.endpoint.OPEN) {
-      const response: IMessageWithoutID = {
+      const _user = {
+        name: this.user._name,
+      };
+      const response: IMessage = {
         type: 'login',
         data: {
-          user: this.user,
+          user: _user,
           password: this.password,
         },
       };
@@ -79,7 +84,7 @@ class Backend {
 //     // return false;
 //   }
 
-  public sendMessage(message: IMessageWithoutID) {
+  public sendMessage(message: IMessage) {
     if (!this.endpoint) return;
     if (this.endpoint.readyState !== this.endpoint.OPEN) {
       throw new Error("Can't send message, endpoint is not open");

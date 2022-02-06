@@ -9,9 +9,10 @@ import GameController from './GameController';
 import Character from './Character';
 import Assets from './Assets';
 import { BufferToObject, prepareVec3, reduceVec3 } from './utils';
-import { IMessageSync, Message, IMessageWithoutID } from './interfaces/Message';
+import { IMessageSync, IMessage } from './interfaces/Message';
 import Backend from './Backend';
 import IUser from './interfaces/User';
+import User from './User';
 
 class Game {
   public renderer: THREE.WebGLRenderer;
@@ -44,7 +45,7 @@ class Game {
 
   private lastRotation?: THREE.Vector3Tuple;
 
-  private players: Map<string, IUser>;
+  private players: Map<string, User>;
 
   constructor() {
     this.renderer = this.setupRenderer();
@@ -53,7 +54,7 @@ class Game {
     this.camera.position.y = 20;
     this.camera.position.z = 0;
 
-    this.players = new Map<string, IUser>();
+    this.players = new Map<string, User>();
 
     this.scene = new THREE.Scene();
     [this.ambiantLight, this.light] = this.setupLights();
@@ -111,12 +112,18 @@ class Game {
     const message: Blob = m.data;
     const data = await message.arrayBuffer();
     // eslint-disable-next-line no-underscore-dangle
-    const _message: Message = <Message>BufferToObject(data);
+    const _message = BufferToObject(data);
 
     switch (_message.type) {
       case 'userQuit': {
         const payload = _message.data as IUser;
-        const user = this.players.get(_message.id);
+
+        if (!payload._name || !payload._id) {
+          throw new Error('Invalid payload');
+        }
+
+        const user = this.players.get(payload._id);
+
         if (!user) throw new Error('User doesn\'t exists'); // wtf
         const ped = user.getPed();
         if (!ped) throw new Error('Ped not found');
@@ -124,36 +131,44 @@ class Game {
         ped.remove();
         ped.visible = false;
 
-        if (!this.players.delete(payload.id)) {
+        if (!this.players.delete(payload._id)) {
           throw new Error('User not found');
         }
-        console.log(`${payload.name} quited`);
+        console.log(`${payload._name} quited`);
         break;
       }
       case 'userJoined': {
-        const payload = _message.data as IUser;
+        const payload = _message.data as IUser[];
+        console.log(payload);
+        payload.forEach((user) => {
+          if (!user._name || !user._id) {
+            throw new Error('Invalid payload');
+          }
 
-        if (!payload.name || !_message.id) {
-          throw new Error('Invalid payload');
-        }
+          const exists = this.players.get(user._id);
+          if (exists) throw new Error('User already exists');
 
-        const exists = this.players.get(_message.id);
-        if (exists) throw new Error('User already exists'); // wtf
+          this.assets?.getModel(this.assets.modelList.meuf).then((model) => {
+            if (!model) throw new Error('No model');
+            const character = new Character(model);
+            const _user = new User(user._id!, user._name!, character);
+            const ped = _user.getPed();
+            if (!ped) {
+              console.warn('User has no ped');
+              return;
+            }
+            this.scene.add(ped);
+            console.warn('User added', _user.id);
+            this.players.set(_user.id, _user);
+            console.log(`${user._name} joined the game`);
+          });
+        });
 
-        const model = await this.assets?.getModel(this.assets.modelList.boug);
-        if (!model) throw new Error('User already exists');
-        payload.character = new Character(model);
-        // this.mixers.push(payload.character.mixer);
-        payload.getPed = () => payload.character?.ped.scene;
-        this.scene.add(payload.character.ped.scene);
-        this.players.set(_message.id, payload);
-
-        console.log(`${payload.name} joined the game`);
         break;
       }
       case 'userSyncPos': {
         const payload = _message.data as IMessageSync;
-        const user = this.players.get(_message.id);
+        const user = this.players.get(payload.id);
 
         if (!user) throw new Error('User not found');
 
@@ -255,7 +270,7 @@ class Game {
 
     this.players.forEach((player) => {
       const ped = player.getPed();
-      player.character?.mixer.update(clockDelta);
+      player.Character.mixer.update(clockDelta);
       if (ped) {
         ped.setRotationFromEuler(ped.rotation);
       }
@@ -277,7 +292,7 @@ class Game {
       rotation: this.lastRotation,
     };
 
-    const message: IMessageWithoutID = {
+    const message: IMessage = {
       type: toSend.type,
       data: toSend,
     };

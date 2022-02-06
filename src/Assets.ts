@@ -25,9 +25,10 @@ class Assets {
   };
 
   public modelList = {
-    boug: '/dist/assets/player.gltf',
+    meuf: '/assets/meuf2skin.glb',
+    boug: '/assets/player.gltf',
     // boug: '/dist/assets/boug3.fbx',
-    Capoeira: '/dist/assets/Capoeira.fbx',
+    Capoeira: '/assets/Capoeira.fbx',
   };
 
   constructor() {
