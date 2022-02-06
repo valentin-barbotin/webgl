@@ -7,7 +7,7 @@ import { IMessage } from './interfaces/Message';
 /**
  * Convert a Vector3 to a string
  * @param {Vector3} vec3
- * @returns {string} Vec3 as a string
+ * @return {string} Vec3 as a string
  */
 function prepareVec3(vec3: Vector3Tuple): string {
   return vec3.toString();
@@ -16,7 +16,7 @@ function prepareVec3(vec3: Vector3Tuple): string {
 /**
  * Reduce a Vector3 precision
  * @param {Vector3} vec3
- * @returns {Vector3Tuple} Vector3Tuple
+ * @return {Vector3Tuple} Vector3Tuple
  */
 function reduceVec3(vec3: Vector3): Vector3Tuple {
   return vec3.toArray().map((v) => parseFloat(v.toFixed(3))) as Vector3Tuple;
@@ -53,7 +53,7 @@ function addArrToMenu(gui: dat.GUI, vec: Vector3, name: string): void {
 /**
  * Convert a key value object to a ArrayBuffer
  * @param {IMessage} obj
- * @returns {ArrayBufferLike}
+ * @return {ArrayBufferLike}
  */
 const objectToBuffer = (obj: IMessage): ArrayBufferLike => {
   const encoder = new TextEncoder();
@@ -63,7 +63,7 @@ const objectToBuffer = (obj: IMessage): ArrayBufferLike => {
 /**
  * Convert an ArrayBuffer to a key value object
  * @param {ArrayBuffer} obj
- * @returns {any}
+ * @return {any}
  */
 const BufferToObject = (obj: ArrayBuffer): IMessage => {
   const encoder = new TextDecoder();

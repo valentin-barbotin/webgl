@@ -23,39 +23,46 @@ class Backend {
     this.game = game;
     this.loginWithBackend();
     const username = window.prompt('Enter your name', 'Anonymous') ?? 'Anonymous';
-    // this.password = window.prompt('Enter your password', 'password') ?? 'password';
-    // const username = 'Anonymous';
-    this.password = 'password';
+    this.password = 'password'; // to edit
 
     this.user = {
       _id: '',
       _name: username,
       getPed: () => this.user.character?.ped.scene,
     };
-
-    // this.roomID = window.prompt('Enter choose a room');
   }
 
-  private loginWithBackend() {
+  /**
+   * Triggered when the connection is closed
+   * @return {void}
+   */
+  private loginWithBackend(): void {
     this.endpoint = new WebSocket(`ws://${gameConfig.hostname}:${gameConfig.port}`);
     this.endpoint.onclose = (ev) => this.onDisconnect.call(this, ev);
     this.endpoint.onopen = (ev) => this.connected.call(this, ev);
     this.endpoint.onmessage = (m) => this.game.processMessage.call(this.game, m);
   }
 
-  private onDisconnect(ev: Event) {
+  /**
+   * Triggered when the connection is closed
+   * @param {Event} ev
+   * @return {void}
+   */
+  private onDisconnect(ev: Event): void {
     if (!this.endpoint) return;
     console.log('Disconnected');
     console.log('Trying to reconnect to backend');
-    // this.loginWithBackend();
-    // this.endpoint.close();
-    // setInterval(
-    //   () => this.loginWithBackend.call(this),
-    //   5000,
-    // );
   }
 
-  private connected(ev: Event) {
+  /**
+   * Triggered when the connection is opened
+   * We send a login message containing the username and password
+   * This is the first message we send to the backend
+   * The backend will forward this message to all clients
+   * @param {Event} ev
+   * @return {void}
+   */
+  private connected(ev: Event): void {
     if (!this.endpoint) return;
     if (this.endpoint.readyState === this.endpoint.OPEN) {
       const _user = {
@@ -73,18 +80,12 @@ class Backend {
     }
   }
 
-//   public static handleLoginResponse(message: Message): boolean {
-//     // wait backend
-//     return true;
-
-//     // if (message.data.login) {
-//     //   console.log('Login success');
-//     //   return true;
-//     // }
-//     // return false;
-//   }
-
-  public sendMessage(message: IMessage) {
+  /**
+  * Send a message to the backend
+  * @param {IMessage} message
+  * @return {void}
+  */
+  public sendMessage(message: IMessage): void {
     if (!this.endpoint) return;
     if (this.endpoint.readyState !== this.endpoint.OPEN) {
       throw new Error("Can't send message, endpoint is not open");
