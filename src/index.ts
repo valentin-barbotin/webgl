@@ -25,7 +25,7 @@ const groundSize = 100;
 async function createGround(game: Game): Promise<void> {
   const ground = new THREE.Mesh(
     new THREE.BoxGeometry(groundSize * 20, 1, groundSize * 20),
-    new THREE.MeshPhongMaterial({ map: await game.assets.getTexture(game.assets.textureList.concrete) }),
+    new THREE.MeshPhongMaterial({ map: game.assets.getTexture(game.assets.textureList.concrete) }),
   );
 
   ground.receiveShadow = true;

@@ -19,7 +19,14 @@ class Assets {
 
   private assetsPath = '/assets/';
 
-  public skybox = ['skybox/negx.jpg', 'skybox/posx.jpg', 'skybox/posy.jpg', 'skybox/negy.jpg', 'skybox/negz.jpg', 'skybox/posz.jpg'];
+  public skybox = {
+    negx: 'skybox/negx.jpg',
+    posx: 'skybox/posx.jpg',
+    posy: 'skybox/posy.jpg',
+    negy: 'skybox/negy.jpg',
+    negz: 'skybox/negz.jpg',
+    posz: 'skybox/posz.jpg',
+  };
 
   // All the textures used in the game
   public textureList = {
@@ -61,7 +68,7 @@ class Assets {
       const fullPath = this.assetsPath + value;
       console.log(fullPath);
       const data = await this.TextureLoader.loadAsync(fullPath);
-      this.textureMap.set(fullPath, data);
+      this.textureMap.set(value, data);
       this.texturesLoaded--;
       Tracker.emit('processed');
       console.log(value, 'loaded');
@@ -91,9 +98,9 @@ class Assets {
   /**
    * Triggered when the connection is closed
    * @param {string} key
-   * @return {Promise<Texture>}
+   * @return {Texture}
    */
-  public async getTexture(key: string): Promise<Texture> {
+  public getTexture(key: string): Texture {
     const path = this.textureMap.has(key);
 
     if (!path) {
