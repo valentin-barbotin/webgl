@@ -49,7 +49,7 @@ class Game {
 
   constructor() {
     this.renderer = this.setupRenderer();
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     this.camera.position.x = 0;
     this.camera.position.y = 20;
     this.camera.position.z = 0;
@@ -317,7 +317,7 @@ class Game {
     light.position.set(50, 50, 50);
     light.target.position.set(0, 0, 0);
     // max shadow distance from source and objet
-    light.shadow.camera.near = 0.01;
+    light.shadow.camera.near = 0;
     light.shadow.camera.far = 500;
     light.castShadow = true;
     // shadows quality

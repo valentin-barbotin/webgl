@@ -16,12 +16,17 @@ class Assets {
 
   private texturesLoaded: number = 0;
 
+  // private assetsPath = './assets/';
+
+  public skybox = ['/assets/skybox/negx.jpg', '/assets/skybox/posx.jpg', '/assets/skybox/posy.jpg', '/assets/skybox/negy.jpg', '/assets/skybox/negz.jpg', '/assets/skybox/posz.jpg'];
+
   public textureList = {
     concrete: '/assets/concrete.jpg',
     grass: '/assets/grass.png',
     dirt: '/assets/dirt.jpg',
     dirtGrass: '/assets/dirtgrass.jpg',
     marble: '/assets/marble.jpg',
+    ...this.skybox,
   };
 
   public modelList = {
