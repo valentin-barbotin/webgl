@@ -16,16 +16,16 @@ class Assets {
 
   private texturesLoaded: number = 0;
 
-  // private assetsPath = './assets/';
+  private assetsPath = '/assets/';
 
-  public skybox = ['/assets/skybox/negx.jpg', '/assets/skybox/posx.jpg', '/assets/skybox/posy.jpg', '/assets/skybox/negy.jpg', '/assets/skybox/negz.jpg', '/assets/skybox/posz.jpg'];
+  public skybox = ['skybox/negx.jpg', 'skybox/posx.jpg', 'skybox/posy.jpg', 'skybox/negy.jpg', 'skybox/negz.jpg', 'skybox/posz.jpg'];
 
   public textureList = {
-    concrete: '/assets/concrete.jpg',
-    grass: '/assets/grass.png',
-    dirt: '/assets/dirt.jpg',
-    dirtGrass: '/assets/dirtgrass.jpg',
-    marble: '/assets/marble.jpg',
+    concrete: 'concrete.jpg',
+    grass: 'grass.png',
+    dirt: 'dirt.jpg',
+    dirtGrass: 'dirtgrass.jpg',
+    marble: 'marble.jpg',
     ...this.skybox,
   };
 
@@ -49,8 +49,9 @@ class Assets {
     // Textures
     const textureLoadingTime = performance.now();
     Object.values(this.textureList).forEach(async (value) => {
-      const data = await this.TextureLoader.loadAsync(value);
-      this.textureMap.set(value, data);
+      const fullPath = this.assetsPath + value;
+      const data = await this.TextureLoader.loadAsync(fullPath);
+      this.textureMap.set(fullPath, data);
       this.texturesLoaded--;
       Tracker.emit('processed');
       console.log(value, 'loaded');
