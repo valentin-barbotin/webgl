@@ -40,27 +40,18 @@ async function createGround(game: Game): Promise<void> {
  * @return {void}
  */
 async function createSkybox(game: Game): Promise<void> {
-  const _skyboxTextures: Promise<THREE.Texture>[] = [];
-  // Search the skybox texture to invert
-  const textureToFlip = game.assets.skybox.findIndex((tex, index) => {
-    if (tex.endsWith('posy.jpg')) {
-      return index;
-    }
-    return false;
-  });
+  const skyboxTextures: THREE.Texture[] = [];
 
   // Load the skybox textures
-  game.assets.skybox.forEach((side) => {
-    const texture = game.assets.getTexture(side);
-    _skyboxTextures.push(texture);
+  // Edit the texture to invert
+  Object.entries(game.assets.skybox).forEach(([key, value]) => {
+    const texture = game.assets.getTexture(value);
+    if (key === 'posy') {
+      texture.rotation = Math.PI;
+      texture.center = new Vector2(0.5, 0.5);
+    }
+    skyboxTextures.push(texture);
   });
-
-  // Wait for the textures to be loaded
-  const skyboxTextures: THREE.Texture[] = await Promise.all(_skyboxTextures);
-
-  // Edit the textures to invert
-  skyboxTextures.at(textureToFlip)!.rotation = Math.PI;
-  skyboxTextures.at(textureToFlip)!.center = new Vector2(0.5, 0.5);
 
   // Create all the materials
   const skyboxSides = skyboxTextures.map((texture) => new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide }));
