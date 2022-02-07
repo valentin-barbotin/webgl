@@ -13,31 +13,34 @@ class Backend {
 
   public user: IUser;
 
-  private password: string;
-
   private roomID?: string;
 
   private game: Game;
 
   constructor(game: Game) {
     this.game = game;
-    this.loginWithBackend();
-    const username = window.prompt('Enter your name', 'Anonymous') ?? 'Anonymous';
-    this.password = window.prompt('Enter your password', 'password') ?? 'password';
-
+    const usernameField = document.getElementById('username') as HTMLInputElement;
+    const passwordField = document.getElementById('password') as HTMLInputElement;
+    
+    const username = usernameField.value;
+    const password = passwordField.value;
+    
+    if (username.length == 0 || password.length == 0) return;
+    
     this.user = {
       id: '',
       name: username,
       getPed: () => this.user.character?.ped.scene,
     };
 
+    this.loginWithBackend(password);
     // this.roomID = window.prompt('Enter choose a room');
   }
 
-  private loginWithBackend() {
+  private loginWithBackend(password: string) {
     this.endpoint = new WebSocket(`ws://${gameConfig.hostname}:${gameConfig.port}`);
     this.endpoint.onclose = (ev) => this.onDisconnect.call(this, ev);
-    this.endpoint.onopen = (ev) => this.connected.call(this, ev);
+    this.endpoint.onopen = (ev) => this.connected.call(this, ev, password);
     this.endpoint.onmessage = (m) => this.game.processMessage.call(this.game, m);
   }
 
@@ -45,7 +48,7 @@ class Backend {
     if (!this.endpoint) return;
     console.log('Disconnected');
     console.log('Trying to reconnect to backend');
-    this.loginWithBackend();
+    // this.loginWithBackend(); // removed
     // this.endpoint.close();
     // setInterval(
     //   () => this.loginWithBackend.call(this),
@@ -53,14 +56,14 @@ class Backend {
     // );
   }
 
-  private connected(ev: Event) {
+  private connected(ev: Event, password: string) {
     if (!this.endpoint) return;
     if (this.endpoint.readyState === this.endpoint.OPEN) {
       const response: IMessageWithoutID = {
         type: 'login',
         data: {
           user: this.user,
-          password: this.password,
+          password: password,
         },
       };
       const payload = objectToBuffer(response);

@@ -15,7 +15,7 @@ import { addVecToMenu } from './utils';
 
 const groundSize = 80;
 
-(async () => {
+async function init() {
   const assets = new Assets();
   await assets.setup();
   const game = new Game();
@@ -38,4 +38,7 @@ const groundSize = 80;
   addVecToMenu(gui, game.Character.ped.scene.scale, 'Scale');
   addVecToMenu(gui, game.Character.ped.scene.position, 'Position');
   addVecToMenu(gui, game.GameController.controls.getObject().position, 'Position (camera)');
-})();
+};
+
+// Add init function to window
+window.init = init;
