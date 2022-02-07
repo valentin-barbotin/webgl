@@ -47,6 +47,7 @@ class GameController {
 
   private onKeyUp(event: KeyboardEvent) {
     const key = event.code;
+    // if the key is released, we set the value to false
     switch (key) {
       case 'KeyZ':
       case 'KeyW':
@@ -79,6 +80,7 @@ class GameController {
 
   private onKeyDown(event: KeyboardEvent) {
     const key = event.code;
+    // if the key is released, we set the value to false, the player can move forward and left at the same time if he don't release the forward key
     switch (key) {
       case 'KeyZ':
       case 'KeyW':

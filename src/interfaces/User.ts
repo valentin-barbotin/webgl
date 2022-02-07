@@ -4,8 +4,8 @@ import { Group } from 'three';
 import Character from '../Character';
 
 interface IUser {
-    id: string;
-    name: string;
+    _id?: string;
+    _name?: string;
     character?: Character;
     getPed(): Group | undefined;
 }

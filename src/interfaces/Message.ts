@@ -8,21 +8,18 @@ interface MessageData {
 }
 
 interface IMessageSync {
+    id: string,
     position: Vector3Tuple,
     rotation: number[],
 }
 
 interface IMessageNewUserJoined extends IUser {}
 
-interface IMessageWithoutID {
+interface IMessage {
     type: string;
     data: IMessageNewUserJoined | {[k: string]: any};
 }
 
-interface Message extends IMessageWithoutID {
-    id: string,
-}
-
 export {
-  Message, MessageData, IMessageNewUserJoined, IMessageSync, IMessageWithoutID,
+  IMessage, MessageData, IMessageNewUserJoined, IMessageSync,
 };
