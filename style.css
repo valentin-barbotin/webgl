@@ -1,0 +1,90 @@
+body {
+    background-color: black !important;
+    text-align: center;
+}
+
+
+/* HEADER */
+
+#overlay {
+    position: absolute;
+    font-size: 16px;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.customHR {
+    border-top: 2px solid blue;
+    width: 400px;
+}
+
+.titleText {
+    color: white;
+}
+
+.madeByText {
+    color: white;
+}
+
+
+/* INDEX */
+
+.gameTitle {
+    color: blue;
+    font-size: 72px;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.startButton {
+    background: transparent;
+    border: 0;
+    border: 1px solid rgb(255, 255, 255);
+    border-radius: 10px;
+    color: #ffffff;
+    padding: 12px 40px;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.startButton:hover {
+    background-color: lightgray;
+    color: black;
+    border-radius: 10px;
+}
+
+
+/* LOGIN PAGE */
+
+.labelColor {
+    font-weight: 700;
+    color: black;
+}
+
+.inputContainer {
+    background: lightgrey;
+    border-radius: 5px;
+    padding: 50px;
+    /* border: 2px solid red; */
+}
+
+/* MENU FOR 3D MODELS */
+
+.menuContainer {
+    padding: 12px 40px;
+}
+
+.carrouselColor {
+    color: white;
+}
+
+.carrouselLabel {
+    color: white;
+}
