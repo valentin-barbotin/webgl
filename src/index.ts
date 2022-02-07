@@ -19,15 +19,6 @@ import { addVecToMenu } from './utils';
 
 const groundSize = 80;
 
-async function init() {
-  const assets = new Assets();
-  await assets.setup();
-  const game = new Game();
-  game.assets = assets;
-  game.setCharacter(await assets.getModel(game.assets.modelList.boug));
-  game.startGame();
-}
-
 /**
  * Create a ground and add it to the scene
  * @param {Game} game
@@ -76,7 +67,7 @@ async function createSkybox(game: Game): Promise<void> {
   game.scene.add(skybox);
 }
 
-(async () => {
+async function init() {
   // Setup the assets and preload them
   const assets = new Assets();
   await assets.setup();
@@ -102,7 +93,7 @@ async function createSkybox(game: Game): Promise<void> {
   addVecToMenu(gui, game.Character.ped.scene.scale, 'Scale');
   addVecToMenu(gui, game.Character.ped.scene.position, 'Position');
   addVecToMenu(gui, game.GameController.controls.getObject().position, 'Position (camera)');
-};
+}
 
 // Add init function to window
 window.init = init;
