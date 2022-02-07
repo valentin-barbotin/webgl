@@ -7,6 +7,7 @@ class Character {
   public mixer: THREE.AnimationMixer;
 
   constructor(ped: GLTF) {
+    // Once the character is loaded, shadow is enabled (cast/receive) on each meshs
     ped.scene.traverse((child) => {
       if (child) {
         if (child instanceof THREE.Mesh) {
@@ -18,6 +19,7 @@ class Character {
       }
     });
 
+    // Once the character is loaded, we create a mixer for the animations
     const animation = ped.animations.shift();
     const mixer = new THREE.AnimationMixer(ped.scene);
     if (animation) {
