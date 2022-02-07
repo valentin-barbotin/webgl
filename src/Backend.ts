@@ -13,33 +13,37 @@ class Backend {
 
   public user: IUser;
 
-  private password: string;
-
   private roomID?: string;
 
   private game: Game;
 
   constructor(game: Game) {
     this.game = game;
-    this.loginWithBackend();
-    const username = window.prompt('Enter your name', 'Anonymous') ?? 'Anonymous';
-    this.password = 'password'; // to edit
+    const usernameField = document.getElementById('username') as HTMLInputElement;
+    const passwordField = document.getElementById('password') as HTMLInputElement;
+    
+    const username = usernameField.value;
+    const password = passwordField.value;
+    
+    if (username.length == 0 || password.length == 0) return;
 
     this.user = {
       _id: '',
       _name: username,
       getPed: () => this.user.character?.ped.scene,
     };
+    this.loginWithBackend(password);
+    // this.roomID = window.prompt('Enter choose a room');
   }
 
   /**
    * Triggered when the connection is closed
    * @return {void}
    */
-  private loginWithBackend(): void {
+  private loginWithBackend(password: string): void {
     this.endpoint = new WebSocket(`ws://${gameConfig.hostname}:${gameConfig.port}`);
     this.endpoint.onclose = (ev) => this.onDisconnect.call(this, ev);
-    this.endpoint.onopen = (ev) => this.connected.call(this, ev);
+    this.endpoint.onopen = (ev) => this.connected.call(this, ev, password);
     this.endpoint.onmessage = (m) => this.game.processMessage.call(this.game, m);
   }
 
@@ -62,7 +66,7 @@ class Backend {
    * @param {Event} ev
    * @return {void}
    */
-  private connected(ev: Event): void {
+  private connected(ev: Event, password: string): void {
     if (!this.endpoint) return;
     if (this.endpoint.readyState === this.endpoint.OPEN) {
       const _user = {
@@ -72,7 +76,7 @@ class Backend {
         type: 'login',
         data: {
           user: _user,
-          password: this.password,
+          password,
         },
       };
       const payload = objectToBuffer(response);
