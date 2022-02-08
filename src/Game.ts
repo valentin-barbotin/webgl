@@ -134,32 +134,6 @@ class Game {
       }
       case 'userJoined': {
         this.userJoined(_message.data as IUser[]);
-        // const payload = _message.data as IUser[];
-        // console.log(payload);
-        // payload.forEach((user) => {
-        //   if (!user._name || !user._id) {
-        //     throw new Error('Invalid payload');
-        //   }
-
-        //   const exists = this.players.get(user._id);
-        //   if (exists) throw new Error('User already exists');
-
-        //   this.assets?.getModel(this.assets.modelList.meuf).then((model) => {
-        //     if (!model) throw new Error('No model');
-        //     const character = new Character(model);
-        //     const _user = new User(user._id!, user._name!, character);
-        //     const ped = _user.getPed();
-        //     if (!ped) {
-        //       console.warn('User has no ped');
-        //       return;
-        //     }
-        //     this.scene.add(ped);
-        //     console.warn('User added', _user.id);
-        //     this.players.set(_user.id, _user);
-        //     console.log(`${user._name} joined the game`);
-        //   });
-        // });
-
         break;
       }
       case 'userSyncPos': {
@@ -198,7 +172,6 @@ class Game {
     }, [] as THREE.Intersection[]);
     let blockPlayer = false;
     const first = filtered.shift()?.distance ?? 100;
-    console.log('distance', first);
     if (first < 10) { //distance
       blockPlayer = true;
     }
