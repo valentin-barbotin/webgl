@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable new-cap */
 /* eslint-disable no-case-declarations */
 /* eslint-disable import/extensions */
@@ -158,24 +159,43 @@ class Game {
     // Updates the ray with a new origin and direction. //
     this.raycaster.setFromCamera(pointer, camera); // il dirige le rayon a partir de la camera vers le centre de l'ecran
 
-    const intersects = this.raycaster.intersectObjects(this.scene.children, true); // intersects est un tableau d'objets
+    const raycasterPos = this.raycaster.ray.origin;
 
-    // Creates an array with all objects the ray intersects. //
-    const duplicate: Set<string> = new Set();
-    const filtered = intersects.reduce((acc, curr) => {
-      if (curr.distance > 2000) return acc; // si l'objet est trop loin, on le filtre
+    const baseCameraY = this.camera.position.y;
 
-      if (duplicate.has(curr.object.name)) return acc; // si l'objet est deja dans le tableau, on le filtre
-
-      duplicate.add(curr.object.name); // on ajoute l'objet a la liste des objets filtres
-
-      return [...acc, curr];
-    }, [] as THREE.Intersection[]);
     let blockPlayer = false;
-    const first = filtered.shift()?.distance ?? 100;
-    if (first < 10) { //distance
-      blockPlayer = true;
+    // Max ray distance instead of Infinity
+    this.raycaster.far = 20;
+    // Creates an array with all objects the ray intersects. //
+    const objetsToCheck = this.scene.children.filter((obj) => obj.name !== 'ground');
+    console.log(objetsToCheck);
+    const duplicate: Set<string> = new Set();
+    const intersects: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = [];
+
+    // Send many raycasts to check if the player is on a block
+    for (let index = raycasterPos.y; index > 1; index--) {
+      if (blockPlayer) break;
+      // for (let index = raycasterPos.y; index > 1; index = Math.ceil(index / 4)) {
+      this.raycaster.camera.position.y = index;
+      this.raycaster.ray.origin.y = index;
+      this.raycaster.intersectObjects(objetsToCheck, true, intersects); // intersects est un tableau d'objets
+
+      const filtered = intersects.reduce((acc, curr) => {
+        if (curr.distance > 2000) return acc; // si l'objet est trop loin, on le filtre
+
+        if (duplicate.has(curr.object.name)) return acc; // si l'objet est deja dans le tableau, on le filtre
+
+        duplicate.add(curr.object.name); // on ajoute l'objet a la liste des objets filtres
+
+        return [...acc, curr];
+      }, intersects);
+      const first = filtered.shift()?.distance ?? 100;
+      if (first < 5) { // distance
+        blockPlayer = true;
+      }
     }
+    // Set back the original y position of the camera
+    camera.position.y = baseCameraY;
 
     const mass = 80; // mass in Kg
     const delta = (time - this.previousTime) / 1000; // camera speed (high value = slow)

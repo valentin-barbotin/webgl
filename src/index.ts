@@ -33,6 +33,7 @@ async function createGround(game: Game): Promise<void> {
   ground.receiveShadow = true;
   ground.castShadow = true;
   ground.position.set(0, -1, 0);
+  ground.name = 'ground';
   game.scene.add(ground);
 }
 
