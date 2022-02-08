@@ -17,7 +17,7 @@ import Assets from './Assets';
 import Game from './Game';
 import { addVecToMenu } from './utils';
 
-const groundSize = 80;
+const groundSize = 200;
 
 /**
  * Create a ground and add it to the scene
@@ -93,6 +93,25 @@ async function init() {
   addVecToMenu(gui, game.Character.ped.scene.scale, 'Scale');
   addVecToMenu(gui, game.Character.ped.scene.position, 'Position');
   addVecToMenu(gui, game.GameController.controls.getObject().position, 'Position (camera)');
+
+
+  const world = await assets.getModel(game.assets.modelList.world);
+  world.scene.scale.set(7, 7, 7);
+  world.scene.position.set(0, 0, 0);
+
+  world.scene.traverse((child) => {
+    if (child) {
+      if (child instanceof THREE.Mesh) {
+        // eslint-disable-next-line no-param-reassign
+        child.castShadow = true;
+        // eslint-disable-next-line no-param-reassign
+        child.receiveShadow = true;
+      }
+    }
+  });
+
+  game.scene.add(world.scene);
+
 }
 
 // Add init function to window

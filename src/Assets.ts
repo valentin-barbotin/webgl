@@ -40,6 +40,7 @@ class Assets {
 
   // All the models used in the game
   public modelList = {
+    world: '/assets/world.glb',
     meuf: '/assets/meuf2skin.glb',
     boug: '/assets/player.gltf',
     // boug: '/dist/assets/boug3.fbx',

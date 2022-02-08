@@ -334,11 +334,11 @@ class Game {
     this.scene.add(ambiantLight);
 
     const light = new THREE.SpotLight(0xffffff, 1.3);
-    light.position.set(50, 50, 50);
-    light.target.position.set(0, 0, 0);
+    light.position.set(0, 100, -20);
+    light.target.position.set(0, 0, 80);
     // max shadow distance from source and objet
     light.shadow.camera.near = 0;
-    light.shadow.camera.far = 500;
+    light.shadow.camera.far = 4000;
     light.castShadow = true;
     // shadows quality
     light.shadow.mapSize.width = 2048;
