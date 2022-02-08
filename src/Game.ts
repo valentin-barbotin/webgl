@@ -114,6 +114,7 @@ class Game {
 
     this.lastPosition = reduction.reducedPos;
     this.lastRotation = reduction.reducedRot;
+    this.Character.ped.scene.visible = false;
   }
 
   public startGame() {
@@ -222,9 +223,9 @@ class Game {
       );
 
       // TODO: Calcule the right vector
-      ped.position.x = camera.position.x + 4;
+      ped.position.x = camera.position.x;
       // character.position.y = character.geometry.parameters.height / 2;
-      ped.position.z = camera.position.z + 4;
+      ped.position.z = camera.position.z;
       const pedPos = ped.position.clone();
 
       // Reduce positions and rotations before sending them to the server
