@@ -187,8 +187,8 @@ class Game {
     this.GameController.direction.z = Number(this.GameController.moveForward) - Number(this.GameController.moveBackward); // 1 = forward, -1 = backward
     this.GameController.direction.x = Number(this.GameController.moveRight) - Number(this.GameController.moveLeft);
     this.GameController.direction.normalize(); // this ensures consistent movements in all directions+
-    if (this.GameController.moveForward || this.GameController.moveBackward) this.GameController.velocity.z -= this.GameController.direction.z * 400.0 * delta; // acceleration (direction * speed)
-    if (this.GameController.moveLeft || this.GameController.moveRight) this.GameController.velocity.x -= this.GameController.direction.x * 400.0 * delta;
+    if (this.GameController.moveForward || this.GameController.moveBackward) this.GameController.velocity.z -= this.GameController.direction.z * (this.GameController.sprint ? 800 : 400)  * delta; // acceleration (direction * speed)
+    if (this.GameController.moveLeft || this.GameController.moveRight) this.GameController.velocity.x -= this.GameController.direction.x * (this.GameController.sprint ? 800 : 400) * delta;
 
     if (true) {
       this.GameController.velocity.y = Math.max(0, this.GameController.velocity.y); // clamping (prevents going through the ground)

@@ -14,6 +14,8 @@ class GameController {
 
   private _moveRight = false;
 
+  private _sprint = false;
+
   public _controls: PointerLockControls;
 
   public velocity: THREE.Vector3;
@@ -42,6 +44,9 @@ class GameController {
 
   public get moveRight() : boolean { return this._moveRight; }
   public set moveRight(v : boolean) { this._moveRight = v; }
+
+  public get sprint() : boolean { return this._sprint; }
+  public set sprint(v : boolean) { this._sprint = v; }
 
   public get controls() : PointerLockControls { return this._controls; }
 
@@ -73,6 +78,11 @@ class GameController {
 
         break;
 
+      case 'ShiftLeft': 
+      case 'AltLeft':
+        this.sprint = false; 
+        break;
+
       default:
         break;
     }
@@ -95,6 +105,10 @@ class GameController {
         break;
       case 'KeyS':
         this.moveBackward = true;
+        break;
+      case 'ShiftLeft': 
+      case 'AltLeft':
+        this.sprint = true; 
         break;
 
       default:
