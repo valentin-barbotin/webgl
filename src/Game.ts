@@ -177,8 +177,35 @@ class Game {
    * @return {void}
    */
   private handlePlayerMoves(time: number): void {
+    const camera = this.GameController.controls.getObject();
+    const pointer = new THREE.Vector2(0, 0);
+
+    // Updates the ray with a new origin and direction. //
+    this.raycaster.setFromCamera(pointer, camera); // il dirige le rayon a partir de la camera vers le centre de l'ecran
+
+    const intersects = this.raycaster.intersectObjects(this.scene.children, true); // intersects est un tableau d'objets
+
+    // Creates an array with all objects the ray intersects. //
+    const duplicate: Set<string> = new Set();
+    const filtered = intersects.reduce((acc, curr) => {
+      if (curr.distance > 2000) return acc; // si l'objet est trop loin, on le filtre
+
+      if (duplicate.has(curr.object.name)) return acc; // si l'objet est deja dans le tableau, on le filtre
+
+      duplicate.add(curr.object.name); // on ajoute l'objet a la liste des objets filtres
+
+      return [...acc, curr];
+    }, [] as THREE.Intersection[]);
+    let blockPlayer = false;
+    const first = filtered.shift()?.distance ?? 100;
+    console.log('distance', first);
+    if (first < 10) { //distance
+      blockPlayer = true;
+    }
+
     const mass = 80; // mass in Kg
     const delta = (time - this.previousTime) / 1000; // camera speed (high value = slow)
+
     this.GameController.velocity.x -= this.GameController.velocity.x * 10.0 * delta; // friction (current velocity * friction * delta)
     this.GameController.velocity.z -= this.GameController.velocity.z * 10.0 * delta; // friction
     this.GameController.velocity.y -= 9.8 * mass * delta; // gravity * mass
@@ -193,19 +220,22 @@ class Game {
       this.GameController.velocity.y = Math.max(0, this.GameController.velocity.y); // clamping (prevents going through the ground)
     }
 
+    console.log('forward velocity', -this.GameController.velocity.z);
+
+    const forwardVelocity = -this.GameController.velocity.z;
+
+    // Le joueur peut se deplacer à gauche et à droite
     this.GameController.controls.moveRight(-this.GameController.velocity.x * delta); // delta used to make movement smooth
-    this.GameController.controls.moveForward(-this.GameController.velocity.z * delta);
+
+    // Si le joueur est bloqué et tente d'avancer on le bloque, il peut toujours reculer
+    if ((blockPlayer && forwardVelocity < 0) || !blockPlayer) {
+      this.GameController.controls.moveForward(forwardVelocity * delta);
+    }
 
     this.GameController.controls.getObject().position.y += (this.GameController.velocity.y * delta); // apply gravity
     if (this.GameController.controls.getObject().position.y < 10) {
       this.GameController.velocity.y = 0;
     }
-
-    const camera = this.GameController.controls.getObject();
-    const pointer = new THREE.Vector2(0, 0);
-
-    // Updates the ray with a new origin and direction. //
-    this.raycaster.setFromCamera(pointer, camera); // il dirige le rayon a partir de la camera vers le centre de l'ecran
 
     // If the player ped exists, rotate the player ped to the camera direction.
     // Also update the player position to be the same as the camera position.
