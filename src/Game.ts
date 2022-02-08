@@ -7,6 +7,10 @@
 /* eslint-disable max-len */
 import * as THREE from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { Quaternion } from 'three';
+import { Project, Scene3D } from 'enable3d';
+import Factories from '@enable3d/common/dist/factories';
+import { AmmoPhysics, PhysicsLoader } from '@enable3d/ammo-physics';
 import Ammo from 'ammojs-typed';
 import GameController from './GameController';
 import Character from './Character';
@@ -17,7 +21,7 @@ import Backend from './Backend';
 import IUser from './interfaces/User';
 import User from './User';
 
-type Ammo = typeof Ammo;
+// type Ammo = typeof Ammo;
 class Game {
   public renderer: THREE.WebGLRenderer;
 
@@ -32,6 +36,8 @@ class Game {
   public mixers: THREE.AnimationMixer[];
 
   private clock: THREE.Clock;
+
+  private PhysXClock: THREE.Clock;
 
   public GameController: GameController;
 
@@ -51,7 +57,13 @@ class Game {
 
   private players: Map<string, User>;
 
-  private ammo: Ammo;
+  private allPhysXObjects: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial>[] = [];
+
+  public Ammo?: typeof Ammo;
+
+  public PhysXWorld?: Ammo.btDiscreteDynamicsWorld;
+
+  private ammoPhysics: AmmoPhysics;
 
   constructor(assets: Assets) {
     this.renderer = this.setupRenderer();
@@ -66,6 +78,7 @@ class Game {
     [this.ambiantLight, this.light] = this.setupLights();
     this.mixers = [];
     this.clock = new THREE.Clock();
+    this.PhysXClock = new THREE.Clock();
     this.previousTime = 0;
 
     this.raycaster = new THREE.Raycaster();
@@ -74,6 +87,7 @@ class Game {
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
     this.backend = new Backend(this);
     this.assets = assets;
+    console.log('Game created');
   }
 
   private get currentUser() : IUser {
@@ -118,9 +132,106 @@ class Game {
     this.Character.ped.scene.visible = false;
   }
 
-  public startGame() {
+  public async startGame() {
+    console.log('Game started');
     if (!this.Character) return;
+    this.setupAmmo();
+
+    console.log('render');
     this.renderScene();
+  }
+
+  private createCube(scale: number, pos: THREE.Vector3, mass: number, quat: Quaternion): void {
+    if (!this.PhysXWorld) return;
+    if (scale < 1) return;
+    if (!this.Ammo) return;
+
+    const superCube = new THREE.Mesh(
+      new THREE.BoxBufferGeometry(scale, scale, scale),
+      new THREE.MeshPhongMaterial({ color: 0x00ff00 }),
+    );
+
+    const transform = new this.Ammo.btTransform();
+    transform.setIdentity();
+    transform.setOrigin(new this.Ammo.btVector3(pos.x, pos.y, pos.z)); // position
+    transform.setRotation(new this.Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)); // rotation
+    const motionState = new this.Ammo.btDefaultMotionState(transform);
+
+    const colision = new this.Ammo.btBoxShape(new this.Ammo.btVector3(scale * 0.5, scale * 0.5, scale * 0.5));
+    colision.setMargin(0.05);
+    const localInertia = new this.Ammo.btVector3(0, 0, 0);
+    colision.calculateLocalInertia(mass, localInertia);
+
+    const rbInfo = new this.Ammo.btRigidBodyConstructionInfo(0, motionState, colision, localInertia);
+    const body = new this.Ammo.btRigidBody(rbInfo);
+
+    body.setFriction(0.5);
+
+    this.PhysXWorld.addRigidBody(body);
+
+    superCube.userData.PhysXBody = body; // link graphics object to physics body
+    superCube.position.set(pos.x, pos.y, pos.z);
+
+    this.allPhysXObjects.push(superCube);
+    this.scene.add(superCube);
+  }
+
+  /**
+   * Update the PhysX world
+   * @param {number} delta
+   * @return {void}
+   */
+  private updatePhysXWorld(delta: number): void {
+    if (!this.PhysXWorld) return;
+    if (!this.Ammo) return;
+    const transform = new this.Ammo.btTransform();
+    this.PhysXWorld.stepSimulation(delta, 10);
+    // Update rigid bodies
+    for (let i = 0, il = this.allPhysXObjects.length; i < il; i++) {
+      const objThree = this.allPhysXObjects[i];
+      const objPhys = objThree.userData.physicsBody;
+      const ms = objPhys.getMotionState();
+
+      if (ms) {
+        ms.getWorldTransform(transform);
+        const p = transform.getOrigin();
+        const q = transform.getRotation();
+        objThree.position.set(p.x(), p.y(), p.z());
+        objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
+
+        objThree.userData.collided = false;
+      }
+    }
+    //   if (!this.Ammo) return;
+    //   if (!this.PhysXWorld) {
+    //     throw new Error('PhysXWorld is not defined');
+    //   }
+    //   this.PhysXWorld.stepSimulation(delta, 10);
+    //   const transform = new this.Ammo.btTransform();
+    //   this.allPhysXObjects.forEach((realObj) => {
+    //     const PhysXObj = realObj.userData.PhysXBody as Ammo.btRigidBody;
+    //     const motionState = PhysXObj.getMotionState();
+    //     // if (!motionState) {
+    //     //   throw new Error("Object doesn't have a motion state");
+    //     // }
+
+    //     if (motionState) {
+    //       motionState.getWorldTransform(transform);
+    //       const p = transform.getOrigin();
+    //       const q = transform.getRotation();
+    //       realObj.position.set(p.x(), p.y(), p.z());
+    //       realObj.quaternion.set(q.x(), q.y(), q.z(), q.w());
+    //     }
+
+  //     // motionState.getWorldTransform(transform);
+  //     // const pos = transform.getOrigin();
+  //     // const quat = transform.getRotation();
+  //     // // const posVec = [pos.x(), pos.y(), pos.z()];
+  //     // realObj.position.set(pos.x(), pos.y(), pos.z());
+  //     // // realObj.position.fromArray(posVec);
+  //     // realObj.quaternion.fromArray([quat.x(), quat.y(), quat.z(), quat.w()]);
+  //   });
+  //   // console.log(this.allPhysXObjects.map((obj) => obj.position));
   }
 
   public async processMessage(m: MessageEvent) {
@@ -168,7 +279,6 @@ class Game {
     this.raycaster.far = 20;
     // Creates an array with all objects the ray intersects. //
     const objetsToCheck = this.scene.children.filter((obj) => obj.name !== 'ground');
-    console.log(objetsToCheck);
     const duplicate: Set<string> = new Set();
     const intersects: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = [];
 
@@ -207,14 +317,12 @@ class Game {
     this.GameController.direction.z = Number(this.GameController.moveForward) - Number(this.GameController.moveBackward); // 1 = forward, -1 = backward
     this.GameController.direction.x = Number(this.GameController.moveRight) - Number(this.GameController.moveLeft);
     this.GameController.direction.normalize(); // this ensures consistent movements in all directions+
-    if (this.GameController.moveForward || this.GameController.moveBackward) this.GameController.velocity.z -= this.GameController.direction.z * (this.GameController.sprint ? 800 : 400)  * delta; // acceleration (direction * speed)
+    if (this.GameController.moveForward || this.GameController.moveBackward) this.GameController.velocity.z -= this.GameController.direction.z * (this.GameController.sprint ? 800 : 400) * delta; // acceleration (direction * speed)
     if (this.GameController.moveLeft || this.GameController.moveRight) this.GameController.velocity.x -= this.GameController.direction.x * (this.GameController.sprint ? 800 : 400) * delta;
 
     if (true) {
       this.GameController.velocity.y = Math.max(0, this.GameController.velocity.y); // clamping (prevents going through the ground)
     }
-
-    console.log('forward velocity', -this.GameController.velocity.z);
 
     const forwardVelocity = -this.GameController.velocity.z;
 
@@ -296,15 +404,28 @@ class Game {
    */
   private renderScene(): void {
     if (!this.Character) return;
+    if (!this.ammoPhysics) return;
     this.light.target.updateMatrixWorld();
     this.light.shadow.camera.updateProjectionMatrix();
 
     const time = performance.now();
 
+    this.ammoPhysics.update(this.PhysXClock.getDelta());
+    this.ammoPhysics.updateDebugger();
+
+    this.updatePhysXWorld(this.PhysXClock.getDelta());
+
     // If the controls is enabled, update the camera.
     if (this.GameController.controls.isLocked) {
       this.handlePlayerMoves(time);
     }
+
+    // if (this.GameController.sprint) {
+    // const quat = new Quaternion(0, 0, 0, 1);
+
+    // this.createCube(10, [0, 0, 0], 100, quat);
+    // this.createCube(15, new THREE.Vector3(0, 40, 0), 100, quat);
+    // }
 
     this.updatePlayers();
 
@@ -371,8 +492,24 @@ class Game {
     return [ambiantLight, light];
   }
 
-  public setupAmmo(ammo: Ammo) {
-    this.ammo = ammo;
+  /**
+   * Setup physics world
+   * @param {Ammo} ammo
+   * @return {void}
+   */
+  public async setupAmmo(): Promise<void> {
+    if (!this.Ammo) return;
+
+    const collisionConfiguration = new this.Ammo.btDefaultCollisionConfiguration();
+    const dispatcher = new this.Ammo.btCollisionDispatcher(collisionConfiguration);
+    const overlappingPairCache = new this.Ammo.btDbvtBroadphase();
+    const solver = new this.Ammo.btSequentialImpulseConstraintSolver();
+    this.PhysXWorld = new this.Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+    this.PhysXWorld.setGravity(new this.Ammo.btVector3(0, -9.81, 0));
+
+    window.Ammo = this.Ammo;
+    this.ammoPhysics = new AmmoPhysics(this.scene);
+    this.ammoPhysics.debug?.enable();
   }
 
   /**

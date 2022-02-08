@@ -8,11 +8,11 @@
 /* eslint-disable max-len */
 /* eslint-disable no-unused-vars */
 import * as THREE from 'three';
+import Ammo from 'ammojs-typed';
 import {
   Scene, Vector, Vector2, Vector3, Vector3Tuple,
 } from 'three';
 import dat from 'dat.gui';
-import Ammo from 'ammojs-typed';
 import Assets from './Assets';
 import Game from './Game';
 import { addVecToMenu } from './utils';
@@ -84,21 +84,19 @@ async function init() {
 
   // Create the character of the user (player)
   game.setCharacter(await assets.getModel(game.assets.modelList.meuf));
-  // start rendering
-  game.startGame();
 
   if (Object.prototype.hasOwnProperty.call(window, 'Ammo')) {
     const _ammo: typeof Ammo = await window['Ammo']();
-    game.setupAmmo(_ammo);
+    game.Ammo = _ammo;
+    // start rendering
+    game.startGame();
   }
-
   // Add the gui
   const gui = new dat.GUI();
   if (!game.Character) return;
   addVecToMenu(gui, game.Character.ped.scene.scale, 'Scale');
   addVecToMenu(gui, game.Character.ped.scene.position, 'Position');
   addVecToMenu(gui, game.GameController.controls.getObject().position, 'Position (camera)');
-
 
   const world = await assets.getModel(game.assets.modelList.world);
   world.scene.scale.set(7, 7, 7);
@@ -116,7 +114,6 @@ async function init() {
   });
 
   game.scene.add(world.scene);
-
 }
 
 // Add init function to window
