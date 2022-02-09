@@ -56,7 +56,7 @@ class Assets {
   }
 
   /**
-   * Triggered when the connection is closed
+   * Setup the assets
    * @param {string} key
    * @return {Promise<void>}
    */
