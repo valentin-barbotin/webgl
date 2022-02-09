@@ -7,10 +7,7 @@
 /* eslint-disable max-len */
 import * as THREE from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Quaternion } from 'three';
-import { Project, Scene3D } from 'enable3d';
-import Factories from '@enable3d/common/dist/factories';
-import { AmmoPhysics, PhysicsLoader } from '@enable3d/ammo-physics';
+import { Quaternion, Vector3Tuple } from 'three';
 import Ammo from 'ammojs-typed';
 import GameController from './GameController';
 import Character from './Character';
@@ -21,7 +18,6 @@ import Backend from './Backend';
 import IUser from './interfaces/User';
 import User from './User';
 
-// type Ammo = typeof Ammo;
 class Game {
   public renderer: THREE.WebGLRenderer;
 
@@ -63,7 +59,7 @@ class Game {
 
   public PhysXWorld?: Ammo.btDiscreteDynamicsWorld;
 
-  private ammoPhysics: AmmoPhysics;
+  // private ammoPhysics: AmmoPhysics;
 
   constructor(assets: Assets) {
     this.renderer = this.setupRenderer();
@@ -137,43 +133,63 @@ class Game {
     if (!this.Character) return;
     this.setupAmmo();
 
+    {
+      const quat = new Quaternion(0, 0, 0, 1);
+      const dimensions: Vector3Tuple = [20, 10, 10];
+      const position: Vector3Tuple = [1, 50, 1];
+
+      const objjj = new THREE.Mesh(
+        new THREE.BoxGeometry(...dimensions),
+        new THREE.MeshPhongMaterial({ color: 0x00ff00 }),
+      );
+
+      this.createPhysxCube(dimensions, position, 40, quat, objjj);
+      this.scene.add(objjj);
+    }
+    {
+      const quat = new Quaternion(0, 0, 0, 1);
+      const dimensions: Vector3Tuple = [10, 10, 10];
+      const position: Vector3Tuple = [1, 70, 1];
+
+      const objjj = new THREE.Mesh(
+        new THREE.BoxGeometry(...dimensions),
+        new THREE.MeshPhongMaterial({ color: 0x00ffff }),
+      );
+
+      this.createPhysxCube(dimensions, position, 2000, quat, objjj);
+      this.scene.add(objjj);
+    }
+
     console.log('render');
     this.renderScene();
   }
 
-  private createCube(scale: number, pos: THREE.Vector3, mass: number, quat: Quaternion): void {
-    if (!this.PhysXWorld) return;
-    if (scale < 1) return;
-    if (!this.Ammo) return;
-
-    const superCube = new THREE.Mesh(
-      new THREE.BoxBufferGeometry(scale, scale, scale),
-      new THREE.MeshPhongMaterial({ color: 0x00ff00 }),
-    );
+  public createPhysxCube(dimensions: Vector3Tuple, pos: Vector3Tuple, mass: number, quat: Quaternion, obj: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial>): void {
+    if (!this.PhysXWorld) throw new Error('PhysXWorld is not defined');
+    if (!this.Ammo) throw new Error('Ammo is not defined');
+    if (dimensions.some((d) => (d < 0))) return;
 
     const transform = new this.Ammo.btTransform();
     transform.setIdentity();
-    transform.setOrigin(new this.Ammo.btVector3(pos.x, pos.y, pos.z)); // position
+    transform.setOrigin(new this.Ammo.btVector3(...pos)); // position
     transform.setRotation(new this.Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)); // rotation
     const motionState = new this.Ammo.btDefaultMotionState(transform);
 
-    const colision = new this.Ammo.btBoxShape(new this.Ammo.btVector3(scale * 0.5, scale * 0.5, scale * 0.5));
+    const colision = new this.Ammo.btBoxShape(new this.Ammo.btVector3(dimensions[0] * 0.5, dimensions[1] * 0.5, dimensions[2] * 0.5));
     colision.setMargin(0.05);
     const localInertia = new this.Ammo.btVector3(0, 0, 0);
     colision.calculateLocalInertia(mass, localInertia);
 
-    const rbInfo = new this.Ammo.btRigidBodyConstructionInfo(0, motionState, colision, localInertia);
+    const rbInfo = new this.Ammo.btRigidBodyConstructionInfo(mass, motionState, colision, localInertia);
     const body = new this.Ammo.btRigidBody(rbInfo);
 
     body.setFriction(0.5);
 
     this.PhysXWorld.addRigidBody(body);
 
-    superCube.userData.PhysXBody = body; // link graphics object to physics body
-    superCube.position.set(pos.x, pos.y, pos.z);
+    obj.userData.PhysXBody = body; // link graphics object to physics body
 
-    this.allPhysXObjects.push(superCube);
-    this.scene.add(superCube);
+    this.allPhysXObjects.push(obj);
   }
 
   /**
@@ -186,52 +202,21 @@ class Game {
     if (!this.Ammo) return;
     const transform = new this.Ammo.btTransform();
     this.PhysXWorld.stepSimulation(delta, 10);
-    // Update rigid bodies
-    for (let i = 0, il = this.allPhysXObjects.length; i < il; i++) {
-      const objThree = this.allPhysXObjects[i];
-      const objPhys = objThree.userData.physicsBody;
-      const ms = objPhys.getMotionState();
+    this.allPhysXObjects.forEach((realObj) => {
+      const PhysXObj = realObj.userData.PhysXBody as Ammo.btRigidBody;
+      const motionState = PhysXObj.getMotionState();
+      if (!motionState) {
+        throw new Error("Object doesn't have a motion state");
+      }
 
-      if (ms) {
-        ms.getWorldTransform(transform);
+      if (motionState) {
+        motionState.getWorldTransform(transform);
         const p = transform.getOrigin();
         const q = transform.getRotation();
-        objThree.position.set(p.x(), p.y(), p.z());
-        objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
-
-        objThree.userData.collided = false;
+        realObj.position.set(p.x(), p.y(), p.z());
+        realObj.quaternion.set(q.x(), q.y(), q.z(), q.w());
       }
-    }
-    //   if (!this.Ammo) return;
-    //   if (!this.PhysXWorld) {
-    //     throw new Error('PhysXWorld is not defined');
-    //   }
-    //   this.PhysXWorld.stepSimulation(delta, 10);
-    //   const transform = new this.Ammo.btTransform();
-    //   this.allPhysXObjects.forEach((realObj) => {
-    //     const PhysXObj = realObj.userData.PhysXBody as Ammo.btRigidBody;
-    //     const motionState = PhysXObj.getMotionState();
-    //     // if (!motionState) {
-    //     //   throw new Error("Object doesn't have a motion state");
-    //     // }
-
-    //     if (motionState) {
-    //       motionState.getWorldTransform(transform);
-    //       const p = transform.getOrigin();
-    //       const q = transform.getRotation();
-    //       realObj.position.set(p.x(), p.y(), p.z());
-    //       realObj.quaternion.set(q.x(), q.y(), q.z(), q.w());
-    //     }
-
-  //     // motionState.getWorldTransform(transform);
-  //     // const pos = transform.getOrigin();
-  //     // const quat = transform.getRotation();
-  //     // // const posVec = [pos.x(), pos.y(), pos.z()];
-  //     // realObj.position.set(pos.x(), pos.y(), pos.z());
-  //     // // realObj.position.fromArray(posVec);
-  //     // realObj.quaternion.fromArray([quat.x(), quat.y(), quat.z(), quat.w()]);
-  //   });
-  //   // console.log(this.allPhysXObjects.map((obj) => obj.position));
+    });
   }
 
   public async processMessage(m: MessageEvent) {
@@ -404,14 +389,11 @@ class Game {
    */
   private renderScene(): void {
     if (!this.Character) return;
-    if (!this.ammoPhysics) return;
+    // if (!this.ammoPhysics) return;
     this.light.target.updateMatrixWorld();
     this.light.shadow.camera.updateProjectionMatrix();
 
     const time = performance.now();
-
-    this.ammoPhysics.update(this.PhysXClock.getDelta());
-    this.ammoPhysics.updateDebugger();
 
     this.updatePhysXWorld(this.PhysXClock.getDelta());
 
@@ -419,13 +401,6 @@ class Game {
     if (this.GameController.controls.isLocked) {
       this.handlePlayerMoves(time);
     }
-
-    // if (this.GameController.sprint) {
-    // const quat = new Quaternion(0, 0, 0, 1);
-
-    // this.createCube(10, [0, 0, 0], 100, quat);
-    // this.createCube(15, new THREE.Vector3(0, 40, 0), 100, quat);
-    // }
 
     this.updatePlayers();
 
@@ -507,9 +482,7 @@ class Game {
     this.PhysXWorld = new this.Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
     this.PhysXWorld.setGravity(new this.Ammo.btVector3(0, -9.81, 0));
 
-    window.Ammo = this.Ammo;
-    this.ammoPhysics = new AmmoPhysics(this.scene);
-    this.ammoPhysics.debug?.enable();
+    // window.Ammo = this.Ammo;
   }
 
   /**

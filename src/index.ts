@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import Ammo from 'ammojs-typed';
 import {
+  Quaternion,
   Scene, Vector, Vector2, Vector3, Vector3Tuple,
 } from 'three';
 import dat from 'dat.gui';
@@ -25,20 +26,24 @@ const groundSize = 200;
  * @return {void}
  */
 async function createGround(game: Game): Promise<void> {
+  const dimensions: Vector3Tuple = [3000, 1, 3000];
+  const position: Vector3Tuple = [0, -1, 0];
   const texture = game.assets.getTexture(game.assets.textureList.negy);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(20, 20);
   const ground = new THREE.Mesh(
-    new THREE.BoxGeometry(groundSize * 20, 1, groundSize * 20),
+    new THREE.BoxBufferGeometry(...dimensions),
     new THREE.MeshPhongMaterial({ map: texture }),
   );
-
+  ground.position.fromArray(position);
   ground.receiveShadow = true;
   ground.castShadow = true;
-  ground.position.set(0, -1, 0);
   ground.name = 'ground';
   game.scene.add(ground);
+
+  const quat = new Quaternion(0, 0, 0, 1);
+  game.createPhysxCube(dimensions, position, 0, quat, ground);
 }
 
 /**
@@ -79,9 +84,6 @@ async function init() {
   // Setup the game, this will create the scene and the renderer
   const game = new Game(assets);
 
-  createGround(game);
-  createSkybox(game);
-
   // Create the character of the user (player)
   game.setCharacter(await assets.getModel(game.assets.modelList.meuf));
 
@@ -90,6 +92,9 @@ async function init() {
     game.Ammo = _ammo;
     // start rendering
     game.startGame();
+
+    createGround(game);
+    createSkybox(game);
   }
   // Add the gui
   const gui = new dat.GUI();
