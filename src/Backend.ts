@@ -2,6 +2,7 @@
 /* eslint-disable import/extensions */
 /* eslint-disable import/no-unresolved */
 /* eslint-disable class-methods-use-this */
+import Game from './Game';
 import { IMessage } from './interfaces/Message';
 import IUser from './interfaces/User';
 import { objectToBuffer } from './utils';
@@ -10,30 +11,29 @@ import gameConfig from './config/config';
 class Backend {
   private endpoint?: WebSocket;
 
-  public user?: IUser;
+  public user: IUser;
 
   private roomID?: string;
 
-  constructor() {
-    // this.roomID = window.prompt('Enter choose a room');
-  }
+  private game: Game;
 
-  public init() {
+  constructor(game: Game) {
+    this.game = game;
     const usernameField = document.getElementById('username') as HTMLInputElement;
     const passwordField = document.getElementById('password') as HTMLInputElement;
-
+    
     const username = usernameField.value;
     const password = passwordField.value;
-
-    if (username.length === 0 || password.length === 0) return;
+    
+    if (username.length == 0 || password.length == 0) return;
 
     this.user = {
       _id: '',
       _name: username,
-      getPed: () => this.user?.character?.ped.scene,
+      getPed: () => this.user.character?.ped.scene,
     };
-    console.log(this.user);
     this.loginWithBackend(password);
+    // this.roomID = window.prompt('Enter choose a room');
   }
 
   /**
@@ -44,7 +44,7 @@ class Backend {
     this.endpoint = new WebSocket(`ws://${gameConfig.hostname}:${gameConfig.port}`);
     this.endpoint.onclose = (ev) => this.onDisconnect.call(this, ev);
     this.endpoint.onopen = (ev) => this.connected.call(this, ev, password);
-    // this.endpoint.onmessage = (m) => this.processMessage.call(this, m);
+    this.endpoint.onmessage = (m) => this.game.processMessage.call(this.game, m);
   }
 
   /**
