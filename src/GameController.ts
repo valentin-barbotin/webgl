@@ -4,8 +4,12 @@
 
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 import * as THREE from 'three';
+import Game from './Game';
+
 
 class GameController {
+  public camera: THREE.PerspectiveCamera | undefined;
+
   private _moveForward = false;
 
   private _moveBackward = false;
@@ -22,7 +26,9 @@ class GameController {
 
   public direction: THREE.Vector3;
 
-  constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer) {
+  private _game: Game;
+
+  constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, game: Game) {
     window.addEventListener('keydown', this.onKeyDown.bind(this)); // bind is used to set the this keyword, because if we don't, this keyword will be window
     window.addEventListener('keyup', this.onKeyUp.bind(this));
 
@@ -30,6 +36,7 @@ class GameController {
 
     this.velocity = new THREE.Vector3();
     this.direction = new THREE.Vector3();
+    this._game = game;
   }
 
   public get moveForward() : boolean { return this._moveForward; }
@@ -69,6 +76,9 @@ class GameController {
         this.moveBackward = false;
         break;
 
+      case 'KeyP':
+        this._game.sounds.startSound(this._game.assets.soundList.leaf);
+        break;
       case 'KeyE':
         if (this._controls.isLocked) {
           this._controls.unlock(); // Unlock the controls
@@ -90,6 +100,8 @@ class GameController {
 
   private onKeyDown(event: KeyboardEvent) {
     const key = event.code;
+    //Add sound when character walk
+    
     // if the key is released, we set the value to false, the player can move forward and left at the same time if he don't release the forward key
     switch (key) {
       case 'KeyZ':
@@ -116,5 +128,6 @@ class GameController {
     }
   }
 }
+
 
 export default GameController;
