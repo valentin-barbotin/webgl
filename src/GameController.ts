@@ -5,6 +5,7 @@
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 import * as THREE from 'three';
 import Game from './Game';
+import { ANIMATIONS } from './Character';
 
 class GameController {
   public camera: THREE.PerspectiveCamera | undefined;
@@ -26,6 +27,8 @@ class GameController {
   public direction: THREE.Vector3;
 
   private _game: Game;
+
+  public animation: string = 'IDLE'; 
 
   constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, game: Game) {
     window.addEventListener('keydown', this.onKeyDown.bind(this)); // bind is used to set the this keyword, because if we don't, this keyword will be window
@@ -86,6 +89,7 @@ class GameController {
       case 'ShiftLeft':
       case 'AltLeft':
         this.sprint = false;
+        this._game.Character?.playAnimation(ANIMATIONS.SPRINT);
         break;
 
       default:
@@ -118,6 +122,7 @@ class GameController {
       case 'ShiftLeft':
       case 'AltLeft':
         this.sprint = true;
+        this._game.Character?.playAnimation(ANIMATIONS.IDLE);
         break;
 
       default:
