@@ -15,6 +15,11 @@ class Sounds {
         const sound = this._game.assets.getSound(soundKey)
         sound.play();
     }
+
+    public stopSound(soundKey: string) {
+        const sound = this._game.assets.getSound(soundKey)
+        sound.stop()
+    }
 }
 
 export default Sounds;
