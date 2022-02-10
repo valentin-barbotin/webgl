@@ -6,7 +6,6 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import * as THREE from 'three';
 import Game from './Game';
 
-
 class GameController {
   public camera: THREE.PerspectiveCamera | undefined;
 
@@ -57,37 +56,23 @@ class GameController {
 
   public get controls() : PointerLockControls { return this._controls; }
 
-  private setupSound(bol: Boolean) {
-    if (bol) {
-      this._game.sounds.startSound(this._game.assets.soundList.leaf);
-    } else {
-      this._game.sounds.stopSound(this._game.assets.soundList.leaf);
-    }
-  }
-
   private onKeyUp(event: KeyboardEvent) {
     const key = event.code;
-    console.log(key);
-    
     // if the key is released, we set the value to false
     switch (key) {
       case 'KeyZ':
       case 'KeyW':
         this.moveForward = false;
-        this.setupSound(this.moveForward);
         break;
       case 'KeyA':
       case 'KeyQ':
         this.moveLeft = false;
-        this.setupSound(this.moveForward);
         break;
       case 'KeyD':
         this.moveRight = false;
-        this.setupSound(this.moveForward);
         break;
       case 'KeyS':
         this.moveBackward = false;
-        this.setupSound(this.moveForward);
         break;
       case 'KeyE':
         if (this._controls.isLocked) {
@@ -98,50 +83,51 @@ class GameController {
 
         break;
 
-      case 'ShiftLeft': 
+      case 'ShiftLeft':
       case 'AltLeft':
-        this.sprint = false; 
+        this.sprint = false;
         break;
 
       default:
         break;
+    }
+    if (!this.moveForward && !this.moveBackward && !this.moveLeft && !this.moveRight) {
+      this._game.sounds.stopSound(this._game.assets.soundList.leaf);
     }
   }
 
   private onKeyDown(event: KeyboardEvent) {
     const key = event.code;
-    //Add sound when character walk
-    
+    // Add sound when character walk
     // if the key is released, we set the value to false, the player can move forward and left at the same time if he don't release the forward key
     switch (key) {
       case 'KeyZ':
       case 'KeyW':
         this.moveForward = true;
-        this.setupSound(this.moveForward);
         break;
       case 'KeyA':
       case 'KeyQ':
         this.moveLeft = true;
-        this.setupSound(this.moveForward);
         break;
       case 'KeyD':
         this.moveRight = true;
-        this.setupSound(this.moveForward);
         break;
       case 'KeyS':
         this.moveBackward = true;
-        this.setupSound(this.moveForward);
         break;
-      case 'ShiftLeft': 
+      case 'ShiftLeft':
       case 'AltLeft':
-        this.sprint = true; 
+        this.sprint = true;
         break;
 
       default:
         break;
     }
+
+    if (this.moveForward || this.moveBackward || this.moveLeft || this.moveRight) {
+      this._game.sounds.startSound(this._game.assets.soundList.leaf);
+    }
   }
 }
-
 
 export default GameController;
