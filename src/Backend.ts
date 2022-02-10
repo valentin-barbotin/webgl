@@ -30,7 +30,7 @@ class Backend {
     const username = usernameField.value;
     const password = passwordField.value;
 
-    const model = this.game.assets.modelList.meuf;
+    const model = this.game.assets.modelList.player2;
 
     if (username.length === 0 || password.length === 0) return;
 

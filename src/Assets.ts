@@ -52,11 +52,11 @@ class Assets {
 
   // All the models used in the game
   public modelList = {
-    world: '/assets/world.glb',
-    meuf: '/assets/meuf2skin.glb',
-    boug: '/assets/player.gltf',
-    // boug: '/dist/assets/boug3.fbx',
-    Capoeira: '/assets/Capoeira.fbx',
+    world: '/assets/map/world.glb',
+    player1: '/assets/characters/player1.glb',
+    player2: '/assets/characters/player2.glb',
+    player3: '/assets/characters/player3.glb',
+    player4: '/assets/characters/player4.glb',
   };
 
   public soundList = {
