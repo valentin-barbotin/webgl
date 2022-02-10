@@ -65,6 +65,7 @@ class Game {
   // private ammoPhysics: AmmoPhysics;
 
   constructor(assets: Assets) {
+    this.assets = assets;
     this.renderer = this.setupRenderer();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     this.camera.position.x = 0;
@@ -86,7 +87,6 @@ class Game {
     this.GameController = new GameController(this.camera, this.renderer, this);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
     this.backend = new Backend(this);
-    this.assets = assets;
     this.sounds = new Sounds(this);
     console.log('Game created');
   }
@@ -111,8 +111,10 @@ class Game {
    * @param {string} key
    * @return {void}
    */
-  public setCharacter(ped: GLTF): void {
+  public async setCharacter(modelKey: string): Promise<void> {
     if (!this.assets) return;
+    const ped = await this.assets.getModel(modelKey);
+
     // Create the character and the user, add the character to the scene
     this.Character = new Character(ped);
     this.scene.add(this.Character.ped.scene);
@@ -605,7 +607,7 @@ class Game {
   private userJoined(message: IUser[]): void {
     // loop over the users
     message.forEach((user) => {
-      if (!user._name || !user._id) {
+      if (!user._name || !user._id || !user._model) {
         throw new Error('Invalid payload');
       }
 
@@ -613,7 +615,7 @@ class Game {
       const exists = this.players.get(user._id);
       if (exists) throw new Error('User already exists');
 
-      this.assets?.getModel(this.assets.modelList.meuf).then((model) => {
+      this.assets?.getModel(user._model ?? 'default').then((model) => {
         if (!model) throw new Error('No model');
         const character = new Character(model);
         const _user = new User(user._id!, user._name!, character);

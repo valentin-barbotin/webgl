@@ -85,7 +85,7 @@ async function init() {
   const game = new Game(assets);
 
   // Create the character of the user (player)
-  game.setCharacter(await assets.getModel(game.assets.modelList.meuf));
+  await game.setCharacter(game.assets.modelList.meuf);
 
   if (Object.prototype.hasOwnProperty.call(window, 'Ammo')) {
     const _ammo: typeof Ammo = await window['Ammo']();

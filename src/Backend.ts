@@ -25,11 +25,14 @@ class Backend {
     const username = usernameField.value;
     const password = passwordField.value;
     
+    const model = this.game.assets.modelList.meuf;
+
     if (username.length == 0 || password.length == 0) return;
 
     this.user = {
       _id: '',
       _name: username,
+      _model: model,
       getPed: () => this.user.character?.ped.scene,
     };
     this.loginWithBackend(password);
@@ -70,8 +73,13 @@ class Backend {
     if (!this.endpoint) return;
     if (this.endpoint.readyState === this.endpoint.OPEN) {
       const _user = {
-        name: this.user._name,
+        ...this.user,
       };
+
+      delete _user.getPed;
+      delete _user.character;
+
+      console.log(_user);
       const response: IMessage = {
         type: 'login',
         data: {

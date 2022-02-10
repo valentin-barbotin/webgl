@@ -6,6 +6,7 @@ import Character from '../Character';
 interface IUser {
     _id?: string;
     _name?: string;
+    _model?: string;
     character?: Character;
     getPed(): Group | undefined;
 }
