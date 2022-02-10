@@ -61,6 +61,7 @@ class Assets {
 
   public soundList = {
     leaf: 'marchefeuille.ogg',
+    bgForest: 'background_forest.mp3'
   }
 
   constructor() {
