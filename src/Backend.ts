@@ -1,14 +1,17 @@
+/* eslint-disable max-len */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable import/extensions */
 /* eslint-disable import/no-unresolved */
 /* eslint-disable class-methods-use-this */
+import * as THREE from 'three';
 import Game from './Game';
-import { IMessage, IMessageSync } from './interfaces/Message';
+import { IMessage, IMessageSync, MessageData } from './interfaces/Message';
 import IUser from './interfaces/User';
 import { BufferToObject, objectToBuffer } from './utils';
 import gameConfig from './config/config';
 import Character from './Character';
 import User from './User';
+import IBullet from './interfaces/Bullet';
 
 class Backend {
   private endpoint?: WebSocket;
@@ -124,6 +127,16 @@ class Backend {
       }
       case 'userSyncPos': {
         this.userSyncPos(_message.data as IMessageSync);
+        break;
+      }
+
+      case 'bullet': {
+        const bullet = _message.data as MessageData;
+        console.log(bullet);
+        if (!bullet.mass || !bullet.radius || !bullet.speed || !bullet.pos || !bullet.direction) return;
+        console.log(bullet.pos);
+        console.log(bullet.direction);
+        this.game.physics.shootBullet(bullet as IBullet);
         break;
       }
 

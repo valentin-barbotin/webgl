@@ -46,7 +46,7 @@ class Game {
 
   public raycaster: THREE.Raycaster;
 
-  private backend: Backend;
+  public backend: Backend;
 
   private lastPosition?: THREE.Vector3Tuple;
 

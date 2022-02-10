@@ -1,9 +1,13 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable max-len */
 /* eslint-disable new-cap */
 /* eslint-disable no-underscore-dangle */
 import Ammo from 'ammojs-typed';
 import * as THREE from 'three';
+import { Vector3 } from 'three';
 import Game from './Game';
+import IBullet from './interfaces/Bullet';
+import { IMessage } from './interfaces/Message';
 
 class Physics {
   private _game: Game;
@@ -34,33 +38,73 @@ class Physics {
     this.PhysXWorld = new this.Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
     this.PhysXWorld.setGravity(new this.Ammo.btVector3(0, -9.81, 0));
 
-    window.addEventListener('pointerdown', this.shootBullet.bind(this));
+    window.addEventListener('pointerdown', this.createBullet.bind(this));
     window.Ammo = this.Ammo;
   }
 
-  private shootBullet() {
+  /**
+   * Tell to the others clients that a bullet has been created
+   * @param {IBullet} bullet
+   * @return {void}
+   */
+  private shootBulletSync(bullet: IBullet): void {
+    delete bullet.gfxObj;
+    delete bullet.physObj;
+    const message: IMessage = {
+      type: 'bullet',
+      data: bullet,
+    };
+    this._game.backend.sendMessage(message);
+  }
+
+  /**
+   * Create a bullet for the local client
+   * @param {IBullet} bullet
+   * @return {void}
+   */
+  public shootBullet(bullet: IBullet): void {
     if (!this.Ammo) throw new Error('Ammo not found');
-    this._game.raycaster.setFromCamera(new THREE.Vector2(0, 0), this._game.camera);
-    const bulletMass = 50;
-    const bulletRadius = 0.7;
-    const bulletSpeed = 200;
-    const bulletMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(bulletRadius, 10, 10),
+    bullet.gfxObj = new THREE.Mesh(
+      new THREE.SphereGeometry(bullet.radius, 10, 10),
       new THREE.MeshPhongMaterial({ color: 0xffffff }),
     );
-    bulletMesh.castShadow = true;
-    bulletMesh.receiveShadow = true;
+    bullet.gfxObj.castShadow = true;
+    bullet.gfxObj.receiveShadow = true;
+
     const quaternion = new THREE.Quaternion(0, 0, 0, 1);
+    const shape = new this.Ammo.btSphereShape(bullet.radius);
+    shape.setMargin(0.05);
+    const bulletObj = this.createPhysXObj(shape, new Vector3(...bullet.pos), bullet.mass, quaternion, bullet.gfxObj);
+    bulletObj.setLinearVelocity(new this.Ammo.btVector3(...bullet.direction));
+  }
+
+  /**
+   * Define bullet specs and create it local/remote
+   * @return {void}
+   */
+  private createBullet(): void {
+    this._game.raycaster.setFromCamera(new THREE.Vector2(0, 0), this._game.camera);
     const pos = new THREE.Vector3(0, 0, 0);
     const direction = new THREE.Vector3(0, 0, 0);
+    const bullet: IBullet = {
+      mass: 50,
+      radius: 0.7,
+      speed: 200,
+      pos: pos.toArray(),
+      direction: direction.toArray(),
+    };
     pos.copy(this._game.raycaster.ray.direction);
     pos.add(this._game.raycaster.ray.origin);
-    const bulletShape = new this.Ammo.btSphereShape(bulletRadius);
-    bulletShape.setMargin(0.05);
-    const bullet = this.createPhysXObj(bulletShape, pos, bulletMass, quaternion, bulletMesh);
+
     direction.copy(this._game.raycaster.ray.direction);
-    direction.multiplyScalar(bulletSpeed);
-    bullet.setLinearVelocity(new this.Ammo.btVector3(direction.x, direction.y, direction.z));
+    direction.multiplyScalar(bullet.speed);
+
+    bullet.pos = pos.toArray();
+    bullet.direction = direction.toArray();
+
+    this.shootBulletSync(bullet);
+
+    this.shootBullet(bullet);
   }
 
   public createPhysXObj(shape: Ammo.btCollisionShape, pos: THREE.Vector3, mass: number, quat: THREE.Quaternion, obj: THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhongMaterial>): Ammo.btRigidBody {
