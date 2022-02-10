@@ -37,7 +37,7 @@ class Backend {
   }
 
   /**
-   * Triggered when the connection is closed
+   * Login with the backend
    * @return {void}
    */
   private loginWithBackend(password: string): void {
