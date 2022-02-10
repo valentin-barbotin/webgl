@@ -66,7 +66,6 @@ class Assets {
   constructor() {
     //audio loader
     //map
-    this.audioLoader = new AudioLoader;
     this.audioMap = new Map<string, Audio>();
     this.textureMap = new Map<string, Texture>();
     this.modelMap = new Map<string, Group>();
