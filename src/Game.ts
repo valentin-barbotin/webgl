@@ -7,7 +7,7 @@
 /* eslint-disable max-len */
 import * as THREE from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Quaternion, Vector3Tuple } from 'three';
+import { Quaternion, Vector2, Vector3, Vector3Tuple } from 'three';
 import Ammo from 'ammojs-typed';
 import GameController from './GameController';
 import Character from './Character';
@@ -82,7 +82,7 @@ class Game {
 
     this.raycaster = new THREE.Raycaster();
 
-    
+
     this.GameController = new GameController(this.camera, this.renderer, this);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
     this.backend = new Backend(this);
@@ -195,6 +195,37 @@ class Game {
     obj.userData.PhysXBody = body; // link graphics object to physics body
 
     this.allPhysXObjects.push(obj);
+  }
+
+  public createPhysXObj(shape: Ammo.btCollisionShape, pos: Vector3, mass: number, quat: Quaternion, obj: THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhongMaterial>): Ammo.btRigidBody {
+    if (!this.PhysXWorld) throw new Error('PhysXWorld is not defined');
+    if (!this.Ammo) throw new Error('Ammo is not defined');
+
+    const transform = new this.Ammo.btTransform();
+    transform.setIdentity();
+    transform.setOrigin(new this.Ammo.btVector3(pos.x, pos.y, pos.z)); // position
+    transform.setRotation(new this.Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)); // rotation
+    const motionState = new this.Ammo.btDefaultMotionState(transform);
+
+    const localInertia = new this.Ammo.btVector3(0, 0, 0);
+    shape.calculateLocalInertia(mass, localInertia);
+
+    const rbInfo = new this.Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
+    const body = new this.Ammo.btRigidBody(rbInfo);
+
+    body.setFriction(0.5);
+
+    // body.setLinearVelocity( new Ammo.btVector3( vel.x, vel.y, vel.z ) ); //todo
+
+    this.PhysXWorld.addRigidBody(body);
+
+    this.scene.add(obj);
+
+    obj.userData.PhysXBody = body; // link graphics object to physics body
+
+    this.allPhysXObjects.push(obj);
+
+    return body;
   }
 
   /**
@@ -487,6 +518,36 @@ class Game {
     const solver = new this.Ammo.btSequentialImpulseConstraintSolver();
     this.PhysXWorld = new this.Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
     this.PhysXWorld.setGravity(new this.Ammo.btVector3(0, -9.81, 0));
+
+    window.addEventListener('pointerdown', (e) => {
+      if (!this.Ammo) return;
+
+      this.raycaster.setFromCamera(new Vector2(0, 0), this.camera);
+
+      const bulletMass = 50;
+      const bulletRadius = 0.7;
+      const bulletSpeed = 200;
+      const bulletMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(bulletRadius, 10, 10),
+        new THREE.MeshPhongMaterial({ color: 0xffffff }),
+      );
+      bulletMesh.castShadow = true;
+      bulletMesh.receiveShadow = true;
+
+      const quaternion = new Quaternion(0, 0, 0, 1);
+      const pos = new Vector3(0, 0, 0);
+      const direction = new Vector3(0, 0, 0);
+      pos.copy(this.raycaster.ray.direction);
+      pos.add(this.raycaster.ray.origin);
+      const bulletShape = new this.Ammo.btSphereShape(bulletRadius);
+      bulletShape.setMargin(0.05);
+
+      const bullet = this.createPhysXObj(bulletShape, pos, bulletMass, quaternion, bulletMesh);
+
+      direction.copy(this.raycaster.ray.direction);
+      direction.multiplyScalar(bulletSpeed);
+      bullet.setLinearVelocity(new this.Ammo.btVector3(direction.x, direction.y, direction.z));
+    });
 
     // window.Ammo = this.Ammo;
   }
