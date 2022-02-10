@@ -1,23 +1,35 @@
 /* eslint-disable max-len */
 /* eslint-disable no-plusplus */
 /* eslint-disable no-underscore-dangle */
-import { Group, Texture, TextureLoader } from 'three';
+import { AudioLoader, Audio, Group, Texture, TextureLoader } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import EventEmitter from 'events';
+import * as THREE from 'three';
+import Sounds from './Sound';
+import { resolve } from 'path/posix';
+
 
 class Assets {
   private textureMap: Map<string, Texture>;
 
   private modelMap: Map<string, Group>;
   //   private modelsMap: Map<string, string>;
+  private audioMap: Map<string, Audio>;
 
   private TextureLoader: TextureLoader;
 
   private GLTFLoader: GLTFLoader;
 
   private texturesLoaded: number = 0;
+  private soundsLoaded: number = 0;
 
   private assetsPath = '/assets/';
+
+  public camera: THREE.PerspectiveCamera;
+
+  public listener = new THREE.AudioListener();
+
+  public audioLoader = new THREE.AudioLoader();
 
   public skybox = {
     negx: 'skybox/negx.jpg',
@@ -47,16 +59,29 @@ class Assets {
     Capoeira: '/assets/Capoeira.fbx',
   };
 
+  public soundList = {
+    leaf: 'marchefeuille.ogg',
+  }
+
   constructor() {
+    //audio loader
+    //map
+    this.audioLoader = new AudioLoader;
+    this.audioMap = new Map<string, Audio>();
     this.textureMap = new Map<string, Texture>();
     this.modelMap = new Map<string, Group>();
     this.TextureLoader = new TextureLoader();
     this.GLTFLoader = new GLTFLoader();
     this.texturesLoaded = Object.keys(this.textureList).length;
+    this.soundsLoaded = Object.keys(this.soundList).length;
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    this.camera.position.x = 0;
+    this.camera.position.y = 20;
+    this.camera.position.z = 0;
   }
 
   /**
-   * Triggered when the connection is closed
+   * 
    * @param {string} key
    * @return {Promise<void>}
    */
@@ -76,10 +101,23 @@ class Assets {
     });
     console.log(`${performance.now() - textureLoadingTime} ms to load textures`);
 
+    const audioLoadingTime = performance.now();
+    Object.values(this.soundList).forEach(async (value) => {
+      const fullPath = this.assetsPath + value;
+      console.log(fullPath);
+      const data = await this.audioLoader.loadAsync(fullPath);
+      const sound = new THREE.Audio(this.listener);
+      this.audioMap.set(value, sound.setBuffer(data).setVolume(0.5));
+      this.soundsLoaded--;
+      Tracker.emit('processed');
+      console.log(value, 'loaded');
+    });
+    console.log(`${performance.now() - audioLoadingTime} ms to load audio`);
+
     // Wait all the textures to be loaded before returning a value, the game will be ready only after
     await new Promise<void>((resolve) => {
       Tracker.on('processed', () => {
-        if (this.texturesLoaded === 0) {
+        if (this.texturesLoaded === 0 && this.soundsLoaded === 0) {
           resolve();
         }
       });
@@ -87,7 +125,7 @@ class Assets {
   }
 
   /**
-   * Triggered when the connection is closed
+   * 
    * @param {string} key
    * @return {Promise<GLTF>}
    */
@@ -97,7 +135,7 @@ class Assets {
   }
 
   /**
-   * Triggered when the connection is closed
+   * 
    * @param {string} key
    * @return {Texture}
    */
@@ -108,6 +146,16 @@ class Assets {
       throw new Error(`${key} not found`);
     } // TODO: throw error
     return this.textureMap.get(key) ?? new Texture();
+  }
+
+  public getSound(key: string): Audio {
+    const path = this.audioMap.has(key);
+    if (!path) {
+      throw new Error(`${key} not found`);
+    }
+    console.log('key found');
+    return this.audioMap.get(key) ?? new Audio(this.listener);
+
   }
 }
 

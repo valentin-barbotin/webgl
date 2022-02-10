@@ -17,6 +17,7 @@ import { IMessageSync, IMessage, MessageData } from './interfaces/Message';
 import Backend from './Backend';
 import IUser from './interfaces/User';
 import User from './User';
+import Sounds from './Sound';
 
 class Game {
   public renderer: THREE.WebGLRenderer;
@@ -59,6 +60,8 @@ class Game {
 
   public PhysXWorld?: Ammo.btDiscreteDynamicsWorld;
 
+  public sounds: Sounds;
+
   // private ammoPhysics: AmmoPhysics;
 
   constructor(assets: Assets) {
@@ -79,10 +82,12 @@ class Game {
 
     this.raycaster = new THREE.Raycaster();
 
-    this.GameController = new GameController(this.camera, this.renderer);
+    
+    this.GameController = new GameController(this.camera, this.renderer, this);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
     this.backend = new Backend(this);
     this.assets = assets;
+    this.sounds = new Sounds(this);
     console.log('Game created');
   }
 
@@ -364,6 +369,7 @@ class Game {
       if (goSync) this.syncCharacter();
     }
   }
+
 
   /**
    * Each frame, we update animations of players and their rotation
