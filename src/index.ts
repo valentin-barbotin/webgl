@@ -43,7 +43,7 @@ async function createGround(game: Game): Promise<void> {
   game.scene.add(ground);
 
   const quat = new Quaternion(0, 0, 0, 1);
-  game.createPhysxCube(dimensions, position, 0, quat, ground);
+  game.physics.createPhysxCube(dimensions, position, 0, quat, ground);
 }
 
 /**
@@ -88,10 +88,8 @@ async function init() {
   await game.setCharacter(game.assets.modelList.meuf);
 
   if (Object.prototype.hasOwnProperty.call(window, 'Ammo')) {
-    const _ammo: typeof Ammo = await window['Ammo']();
-    game.Ammo = _ammo;
     // start rendering
-    game.startGame();
+    await game.startGame();
 
     createGround(game);
     createSkybox(game);

@@ -6,18 +6,18 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 import * as THREE from 'three';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Quaternion, Vector2, Vector3, Vector3Tuple } from 'three';
 import Ammo from 'ammojs-typed';
 import GameController from './GameController';
 import Character from './Character';
 import Assets from './Assets';
-import { BufferToObject, prepareVec3, reduceVec3 } from './utils';
-import { IMessageSync, IMessage, MessageData } from './interfaces/Message';
+import { prepareVec3, reduceVec3 } from './utils';
+import { IMessage } from './interfaces/Message';
 import Backend from './Backend';
 import IUser from './interfaces/User';
 import User from './User';
 import Sounds from './Sound';
+import Physics from './Physics';
 
 class Game {
   public renderer: THREE.WebGLRenderer;
@@ -44,7 +44,7 @@ class Game {
 
   private previousTime: number;
 
-  private raycaster: THREE.Raycaster;
+  public raycaster: THREE.Raycaster;
 
   private backend: Backend;
 
@@ -52,9 +52,7 @@ class Game {
 
   private lastRotation?: THREE.Vector3Tuple;
 
-  private players: Map<string, User>;
-
-  private allPhysXObjects: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial>[] = [];
+  public players: Map<string, User>;
 
   public Ammo?: typeof Ammo;
 
@@ -62,7 +60,7 @@ class Game {
 
   public sounds: Sounds;
 
-  // private ammoPhysics: AmmoPhysics;
+  public physics: Physics;
 
   constructor(assets: Assets) {
     this.assets = assets;
@@ -83,11 +81,11 @@ class Game {
 
     this.raycaster = new THREE.Raycaster();
 
-
     this.GameController = new GameController(this.camera, this.renderer, this);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
     this.backend = new Backend(this);
     this.sounds = new Sounds(this);
+    this.physics = new Physics(this);
     console.log('Game created');
   }
 
@@ -135,10 +133,14 @@ class Game {
     this.Character.ped.scene.visible = false;
   }
 
-  public async startGame() {
+  /**
+   * Launch the game
+   * @return {Promise<void>}
+   */
+  public async startGame(): Promise<void> {
     console.log('Game started');
     if (!this.Character) return;
-    this.setupAmmo();
+    await this.physics.setupAmmo();
 
     {
       const quat = new Quaternion(0, 0, 0, 1);
@@ -150,7 +152,7 @@ class Game {
         new THREE.MeshPhongMaterial({ color: 0x00ff00 }),
       );
 
-      this.createPhysxCube(dimensions, position, 40, quat, objjj);
+      this.physics.createPhysxCube(dimensions, position, 40, quat, objjj);
       this.scene.add(objjj);
     }
     {
@@ -163,7 +165,7 @@ class Game {
         new THREE.MeshPhongMaterial({ color: 0x00ffff }),
       );
 
-      this.createPhysxCube(dimensions, position, 2000, quat, objjj);
+      this.physics.createPhysxCube(dimensions, position, 2000, quat, objjj);
       this.scene.add(objjj);
     }
 
@@ -171,115 +173,69 @@ class Game {
     this.renderScene();
   }
 
-  public createPhysxCube(dimensions: Vector3Tuple, pos: Vector3Tuple, mass: number, quat: Quaternion, obj: THREE.Mesh<THREE.BoxGeometry, THREE.MeshPhongMaterial>): void {
-    if (!this.PhysXWorld) throw new Error('PhysXWorld is not defined');
-    if (!this.Ammo) throw new Error('Ammo is not defined');
-    if (dimensions.some((d) => (d < 0))) return;
+  /**
+   * On each frame, we check if the player can move forward
+   * @todo: Switch to AmmoJS
+   * @return {boolean}
+   */
+  private handleRaycastColision(index: number, duplicate: Set<string>, intersects: THREE.Intersection<THREE.Object3D<THREE.Event>>[], objects: THREE.Object3D<THREE.Event>[]): boolean {
+    this.raycaster.camera.position.y = index;
+    this.raycaster.ray.origin.y = index;
+    this.raycaster.intersectObjects(objects, true, intersects); // intersects est un tableau d'objets
 
-    const transform = new this.Ammo.btTransform();
-    transform.setIdentity();
-    transform.setOrigin(new this.Ammo.btVector3(...pos)); // position
-    transform.setRotation(new this.Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)); // rotation
-    const motionState = new this.Ammo.btDefaultMotionState(transform);
+    const filtered = intersects.reduce((acc, curr) => {
+      if (curr.distance > 2000) return acc; // si l'objet est trop loin, on le filtre
 
-    const colision = new this.Ammo.btBoxShape(new this.Ammo.btVector3(dimensions[0] * 0.5, dimensions[1] * 0.5, dimensions[2] * 0.5));
-    colision.setMargin(0.05);
-    const localInertia = new this.Ammo.btVector3(0, 0, 0);
-    colision.calculateLocalInertia(mass, localInertia);
+      if (duplicate.has(curr.object.name)) return acc; // si l'objet est deja dans le tableau, on le filtre
 
-    const rbInfo = new this.Ammo.btRigidBodyConstructionInfo(mass, motionState, colision, localInertia);
-    const body = new this.Ammo.btRigidBody(rbInfo);
+      duplicate.add(curr.object.name); // on ajoute l'objet a la liste des objets filtres
 
-    body.setFriction(0.5);
-
-    this.PhysXWorld.addRigidBody(body);
-
-    obj.userData.PhysXBody = body; // link graphics object to physics body
-
-    this.allPhysXObjects.push(obj);
-  }
-
-  public createPhysXObj(shape: Ammo.btCollisionShape, pos: Vector3, mass: number, quat: Quaternion, obj: THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhongMaterial>): Ammo.btRigidBody {
-    if (!this.PhysXWorld) throw new Error('PhysXWorld is not defined');
-    if (!this.Ammo) throw new Error('Ammo is not defined');
-
-    const transform = new this.Ammo.btTransform();
-    transform.setIdentity();
-    transform.setOrigin(new this.Ammo.btVector3(pos.x, pos.y, pos.z)); // position
-    transform.setRotation(new this.Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)); // rotation
-    const motionState = new this.Ammo.btDefaultMotionState(transform);
-
-    const localInertia = new this.Ammo.btVector3(0, 0, 0);
-    shape.calculateLocalInertia(mass, localInertia);
-
-    const rbInfo = new this.Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
-    const body = new this.Ammo.btRigidBody(rbInfo);
-
-    body.setFriction(0.5);
-
-    // body.setLinearVelocity( new Ammo.btVector3( vel.x, vel.y, vel.z ) ); //todo
-
-    this.PhysXWorld.addRigidBody(body);
-
-    this.scene.add(obj);
-
-    obj.userData.PhysXBody = body; // link graphics object to physics body
-
-    this.allPhysXObjects.push(obj);
-
-    return body;
+      return [...acc, curr];
+    }, intersects);
+    const first = filtered.shift()?.distance ?? 100;
+    return (first < 5);
   }
 
   /**
-   * Update the PhysX world
-   * @param {number} delta
+   * Update the local player
+   * @param {THREE.Camera} camera
    * @return {void}
    */
-  private updatePhysXWorld(delta: number): void {
-    if (!this.PhysXWorld) return;
-    if (!this.Ammo) return;
-    const transform = new this.Ammo.btTransform();
-    this.PhysXWorld.stepSimulation(delta, 10);
-    this.allPhysXObjects.forEach((realObj) => {
-      const PhysXObj = realObj.userData.PhysXBody as Ammo.btRigidBody;
-      const motionState = PhysXObj.getMotionState();
-      if (!motionState) {
-        throw new Error("Object doesn't have a motion state");
-      }
+  private updateLocalPlayer(camera: THREE.Camera): void {
+    const ped = this.currentUser.getPed();
+    if (!ped) return;
+    let goSync = false;
+    ped.setRotationFromEuler(
+      camera.rotation,
+    );
 
-      if (motionState) {
-        motionState.getWorldTransform(transform);
-        const p = transform.getOrigin();
-        const q = transform.getRotation();
-        realObj.position.set(p.x(), p.y(), p.z());
-        realObj.quaternion.set(q.x(), q.y(), q.z(), q.w());
-      }
-    });
-  }
+    // TODO: Calcule the right vector
+    ped.position.x = camera.position.x;
+    // character.position.y = character.geometry.parameters.height / 2;
+    ped.position.z = camera.position.z;
+    const pedPos = ped.position.clone();
 
-  public async processMessage(m: MessageEvent) {
-    const message: Blob = m.data;
-    const data = await message.arrayBuffer();
-    // eslint-disable-next-line no-underscore-dangle
-    const _message = BufferToObject(data);
+    // Reduce positions and rotations before sending them to the server
+    const reduction = {
+      reducedPos: reduceVec3(pedPos),
+      reducedRot: reduceVec3(ped.rotation.toVector3()),
+    };
 
-    switch (_message.type) {
-      case 'userQuit': {
-        this.userQuit(_message.data as IUser);
-        break;
-      }
-      case 'userJoined': {
-        this.userJoined(_message.data as IUser[]);
-        break;
-      }
-      case 'userSyncPos': {
-        this.userSyncPos(_message.data as IMessageSync);
-        break;
-      }
-
-      default:
-        break;
+    const preparedVec3Pos = prepareVec3(reduction.reducedPos);
+    const preparedVec3Rotation = prepareVec3(reduction.reducedRot);
+    // if previous position is too much different from previous one, send it to the server
+    if (this.lastPosition && prepareVec3(this.lastPosition) !== preparedVec3Pos) {
+      goSync = true;
     }
+
+    // if previous rotation is too much different from previous one, send it to the server
+    if (this.lastRotation && prepareVec3(this.lastRotation) !== preparedVec3Rotation) {
+      goSync = true;
+    }
+    // Update values for the next round
+    this.lastPosition = reduction.reducedPos;
+    this.lastRotation = reduction.reducedRot;
+    if (goSync) this.syncCharacter();
   }
 
   /**
@@ -297,7 +253,6 @@ class Game {
 
     const baseCameraY = this.camera.position.y;
 
-    let blockPlayer = false;
     // Max ray distance instead of Infinity
     this.raycaster.far = 20;
     // Creates an array with all objects the ray intersects. //
@@ -305,27 +260,11 @@ class Game {
     const duplicate: Set<string> = new Set();
     const intersects: THREE.Intersection<THREE.Object3D<THREE.Event>>[] = [];
 
+    let blockPlayer = false;
     // Send many raycasts to check if the player is on a block
     for (let index = raycasterPos.y; index > 1; index--) {
+      blockPlayer = this.handleRaycastColision(index, duplicate, intersects, objetsToCheck);
       if (blockPlayer) break;
-      // for (let index = raycasterPos.y; index > 1; index = Math.ceil(index / 4)) {
-      this.raycaster.camera.position.y = index;
-      this.raycaster.ray.origin.y = index;
-      this.raycaster.intersectObjects(objetsToCheck, true, intersects); // intersects est un tableau d'objets
-
-      const filtered = intersects.reduce((acc, curr) => {
-        if (curr.distance > 2000) return acc; // si l'objet est trop loin, on le filtre
-
-        if (duplicate.has(curr.object.name)) return acc; // si l'objet est deja dans le tableau, on le filtre
-
-        duplicate.add(curr.object.name); // on ajoute l'objet a la liste des objets filtres
-
-        return [...acc, curr];
-      }, intersects);
-      const first = filtered.shift()?.distance ?? 100;
-      if (first < 5) { // distance
-        blockPlayer = true;
-      }
     }
     // Set back the original y position of the camera
     camera.position.y = baseCameraY;
@@ -343,9 +282,7 @@ class Game {
     if (this.GameController.moveForward || this.GameController.moveBackward) this.GameController.velocity.z -= this.GameController.direction.z * (this.GameController.sprint ? 800 : 400) * delta; // acceleration (direction * speed)
     if (this.GameController.moveLeft || this.GameController.moveRight) this.GameController.velocity.x -= this.GameController.direction.x * (this.GameController.sprint ? 800 : 400) * delta;
 
-    if (true) {
-      this.GameController.velocity.y = Math.max(0, this.GameController.velocity.y); // clamping (prevents going through the ground)
-    }
+    this.GameController.velocity.y = Math.max(0, this.GameController.velocity.y); // clamping (prevents going through the ground)
 
     const forwardVelocity = -this.GameController.velocity.z;
 
@@ -366,43 +303,8 @@ class Game {
     // Also update the player position to be the same as the camera position.
     // 3rd person camera
     // 1st person camera
-    const ped = this.currentUser.getPed();
-    if (ped) {
-      let goSync = false;
-      ped.setRotationFromEuler(
-        camera.rotation,
-      );
-
-      // TODO: Calcule the right vector
-      ped.position.x = camera.position.x;
-      // character.position.y = character.geometry.parameters.height / 2;
-      ped.position.z = camera.position.z;
-      const pedPos = ped.position.clone();
-
-      // Reduce positions and rotations before sending them to the server
-      const reduction = {
-        reducedPos: reduceVec3(pedPos),
-        reducedRot: reduceVec3(ped.rotation.toVector3()),
-      };
-
-      const preparedVec3Pos = prepareVec3(reduction.reducedPos);
-      const preparedVec3Rotation = prepareVec3(reduction.reducedRot);
-      // if previous position is too much different from previous one, send it to the server
-      if (this.lastPosition && prepareVec3(this.lastPosition) !== preparedVec3Pos) {
-        goSync = true;
-      }
-
-      // if previous rotation is too much different from previous one, send it to the server
-      if (this.lastRotation && prepareVec3(this.lastRotation) !== preparedVec3Rotation) {
-        goSync = true;
-      }
-      // Update values for the next round
-      this.lastPosition = reduction.reducedPos;
-      this.lastRotation = reduction.reducedRot;
-      if (goSync) this.syncCharacter();
-    }
+    this.updateLocalPlayer(camera);
   }
-
 
   /**
    * Each frame, we update animations of players and their rotation
@@ -428,13 +330,12 @@ class Game {
    */
   private renderScene(): void {
     if (!this.Character) return;
-    // if (!this.ammoPhysics) return;
     this.light.target.updateMatrixWorld();
     this.light.shadow.camera.updateProjectionMatrix();
 
     const time = performance.now();
 
-    this.updatePhysXWorld(this.PhysXClock.getDelta());
+    this.physics.updatePhysXWorld(this.PhysXClock.getDelta());
 
     // If the controls is enabled, update the camera.
     if (this.GameController.controls.isLocked) {
@@ -504,132 +405,6 @@ class Game {
     light.shadow.mapSize.height = 2048;
     this.scene.add(light);
     return [ambiantLight, light];
-  }
-
-  /**
-   * Setup physics world
-   * @param {Ammo} ammo
-   * @return {void}
-   */
-  public async setupAmmo(): Promise<void> {
-    if (!this.Ammo) return;
-
-    const collisionConfiguration = new this.Ammo.btDefaultCollisionConfiguration();
-    const dispatcher = new this.Ammo.btCollisionDispatcher(collisionConfiguration);
-    const overlappingPairCache = new this.Ammo.btDbvtBroadphase();
-    const solver = new this.Ammo.btSequentialImpulseConstraintSolver();
-    this.PhysXWorld = new this.Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-    this.PhysXWorld.setGravity(new this.Ammo.btVector3(0, -9.81, 0));
-
-    window.addEventListener('pointerdown', (e) => {
-      if (!this.Ammo) return;
-
-      this.raycaster.setFromCamera(new Vector2(0, 0), this.camera);
-
-      const bulletMass = 50;
-      const bulletRadius = 0.7;
-      const bulletSpeed = 200;
-      const bulletMesh = new THREE.Mesh(
-        new THREE.SphereGeometry(bulletRadius, 10, 10),
-        new THREE.MeshPhongMaterial({ color: 0xffffff }),
-      );
-      bulletMesh.castShadow = true;
-      bulletMesh.receiveShadow = true;
-
-      const quaternion = new Quaternion(0, 0, 0, 1);
-      const pos = new Vector3(0, 0, 0);
-      const direction = new Vector3(0, 0, 0);
-      pos.copy(this.raycaster.ray.direction);
-      pos.add(this.raycaster.ray.origin);
-      const bulletShape = new this.Ammo.btSphereShape(bulletRadius);
-      bulletShape.setMargin(0.05);
-
-      const bullet = this.createPhysXObj(bulletShape, pos, bulletMass, quaternion, bulletMesh);
-
-      direction.copy(this.raycaster.ray.direction);
-      direction.multiplyScalar(bulletSpeed);
-      bullet.setLinearVelocity(new this.Ammo.btVector3(direction.x, direction.y, direction.z));
-    });
-
-    // window.Ammo = this.Ammo;
-  }
-
-  /**
-   * Called when a player quit
-   * Retrieve the player from the list of players and remove him from the scene
-   * @param {IUser} message
-   * @return {void}
-   */
-  private userQuit(message: IUser): void {
-    if (!message._name || !message._id) {
-      throw new Error('Invalid payload');
-    }
-
-    const user = this.players.get(message._id);
-
-    if (!user) throw new Error('User doesn\'t exists'); // wtf
-    const ped = user.getPed();
-    if (!ped) throw new Error('Ped not found');
-    ped.clear();
-    ped.remove();
-    ped.visible = false;
-
-    if (!this.players.delete(message._id)) {
-      throw new Error('User not found');
-    }
-    console.log(`${message._name} quited`);
-  }
-
-  /**
-   * Called when a player moves
-   * Get the rotation and position, and apply them to the concerned player
-   * @param {IMessageSync} message
-   * @return {void}
-   */
-  private userSyncPos(message: IMessageSync): void {
-    const user = this.players.get(message.id);
-
-    if (!user) throw new Error('User not found');
-
-    const ped = user.getPed();
-    if (!ped) throw new Error('Ped not found');
-    ped.position.fromArray(message.position);
-    ped.rotation.fromArray(message.rotation);
-  }
-
-  /**
-   * Called when a user join the game
-   * Also called when we join the game, to receive the list of users
-   * Create new player(s) and add it/them to the scene
-   * @param {IUser[]} message
-   * @return {void}
-   */
-  private userJoined(message: IUser[]): void {
-    // loop over the users
-    message.forEach((user) => {
-      if (!user._name || !user._id || !user._model) {
-        throw new Error('Invalid payload');
-      }
-
-      // if the user is already in the scene, Error
-      const exists = this.players.get(user._id);
-      if (exists) throw new Error('User already exists');
-
-      this.assets?.getModel(user._model ?? 'default').then((model) => {
-        if (!model) throw new Error('No model');
-        const character = new Character(model);
-        const _user = new User(user._id!, user._name!, character);
-        const ped = _user.getPed();
-        if (!ped) {
-          console.warn('User has no ped');
-          return;
-        }
-        this.scene.add(ped);
-        console.warn('User added', _user.id);
-        this.players.set(_user.id, _user);
-        console.log(`${user._name} joined the game`);
-      });
-    });
   }
 }
 
