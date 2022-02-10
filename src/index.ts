@@ -121,3 +121,4 @@ async function init() {
 
 // Add init function to window
 window.init = init;
+
