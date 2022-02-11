@@ -84,6 +84,7 @@ class Physics {
    * @return {void}
    */
   private createBullet(): void {
+    if (!this._game.GameController._controls.isLocked) return;
     this._game.raycaster.setFromCamera(new THREE.Vector2(0, 0), this._game.camera);
     const pos = new THREE.Vector3(0, 0, 0);
     const direction = new THREE.Vector3(0, 0, 0);
