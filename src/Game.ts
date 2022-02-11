@@ -63,8 +63,8 @@ class Game {
   public physics: Physics;
 
   constructor(assets: Assets) {
-    this.assets = assets;
     this.renderer = this.setupRenderer();
+    this.assets = assets;
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     this.camera.position.x = 0;
     this.camera.position.y = 16;
@@ -114,7 +114,7 @@ class Game {
     const ped = await this.assets.getModel(modelKey);
 
     // Create the character and the user, add the character to the scene
-    this.Character = new Character(ped, modelKey);
+    this.Character = new Character(ped, modelKey, this);
     this.scene.add(this.Character.ped.scene);
     this.mixers.push(this.Character.mixer);
 
@@ -346,6 +346,12 @@ class Game {
     this.light.shadow.camera.updateProjectionMatrix();
 
     const time = performance.now();
+    const delta = (time - this.previousTime);
+
+    if (delta > 40) {
+      this.previousTime = time;
+      this.renderer.render(this.scene, this.camera);
+    }
 
     this.physics.updatePhysXWorld(this.PhysXClock.getDelta());
 
@@ -357,8 +363,8 @@ class Game {
     this.updatePlayers();
 
     requestAnimationFrame(this.renderScene.bind(this));
-    this.renderer.render(this.scene, this.camera);
     this.previousTime = time;
+    this.renderer.render(this.scene, this.camera);
   }
 
   /**

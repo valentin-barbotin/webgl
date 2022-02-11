@@ -205,7 +205,7 @@ class Backend {
 
       this.game.assets?.getModel(user._model ?? 'default').then((model) => {
         if (!model) throw new Error('No model');
-        const character = new Character(model, user._model!);
+        const character = new Character(model, user._model!, this.game);
         const _user = new User(user._id!, user._name!, character);
         const ped = _user.getPed();
         if (!ped) {

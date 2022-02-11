@@ -16,7 +16,7 @@ import {
 import dat from 'dat.gui';
 import Assets from './Assets';
 import Game from './Game';
-import { addVecToMenu } from './utils';
+import { addVecToMenu, preloadObject } from './utils';
 
 const groundSize = 200;
 
@@ -130,6 +130,7 @@ async function init(model: string) {
         child.castShadow = true;
         // eslint-disable-next-line no-param-reassign
         child.receiveShadow = true;
+        preloadObject(child, game.scene, game.renderer, game.camera);
       }
     }
   });

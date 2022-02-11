@@ -7,10 +7,11 @@ import EventEmitter from 'events';
 import * as THREE from 'three';
 import Sounds from './Sound';
 import { resolve } from 'path/posix';
+import Game from './Game';
 
 
 class Assets {
-  private textureMap: Map<string, Texture>;
+  public textureMap: Map<string, Texture>;
 
   private modelMap: Map<string, Group>;
 

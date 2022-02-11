@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { AnimationAction } from 'three';
 import Game from './Game';
+import { preloadObject } from './utils';
 
 enum ANIMATIONS {
   BOXING = 'BOXING',
@@ -20,7 +21,7 @@ class Character {
 
   public model: string;
 
-  constructor(ped: GLTF, model: string) {
+  constructor(ped: GLTF, model: string, game: Game) {
     this.model = model;
     this.ped = ped;
     // Once the character is loaded, shadow is enabled (cast/receive) on each meshs
@@ -31,6 +32,7 @@ class Character {
           child.castShadow = true;
           // eslint-disable-next-line no-param-reassign
           child.receiveShadow = true;
+          preloadObject(child, game.scene, game.renderer, game.camera);
         }
       }
     });
