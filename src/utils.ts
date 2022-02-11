@@ -1,6 +1,8 @@
+/* eslint-disable max-len */
+/* eslint-disable no-param-reassign */
 /* eslint-disable import/extensions */
 /* eslint-disable import/no-unresolved */
-import { Vector3, Vector3Tuple } from 'three';
+import { Object3D, Vector3, Vector3Tuple, Scene, Renderer, Camera } from 'three';
 import dat from 'dat.gui';
 import { IMessage } from './interfaces/Message';
 
@@ -72,6 +74,29 @@ const BufferToObject = (obj: ArrayBuffer): IMessage => {
   return message;
 };
 
+const preloadObject = (obj: Object3D, scene: Scene, renderer: Renderer, camera: Camera): void => {
+  const originalPos = obj.position.clone();
+  obj.position.set(0, 0, 0);
+
+  const p = obj.parent;
+  if (p) {
+    p.remove(obj);
+    scene.add(obj);
+  }
+
+  const culled = obj.frustumCulled;
+  obj.frustumCulled = false;
+
+  renderer.render(scene, camera);
+  obj.position.copy(originalPos);
+
+  if (p) {
+    scene.remove(obj);
+    p.add(obj);
+  }
+  obj.frustumCulled = culled;
+};
+
 export {
-  prepareVec3, reduceVec3, addVecToMenu, addArrToMenu, objectToBuffer, BufferToObject,
+  prepareVec3, reduceVec3, addVecToMenu, addArrToMenu, objectToBuffer, BufferToObject, preloadObject
 };

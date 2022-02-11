@@ -376,7 +376,6 @@ class Game {
     this.previousTime = time;
     this.renderer.render(this.scene, this.camera);
     this.stats.update();
-    this.previousTime = time;
   }
 
   /**
