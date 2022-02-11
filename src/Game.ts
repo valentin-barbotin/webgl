@@ -19,6 +19,7 @@ import IUser from './interfaces/User';
 import User from './User';
 import Sounds from './Sound';
 import Physics from './Physics';
+import { degToRad, radToDeg } from 'three/src/math/MathUtils';
 
 class Game {
   public renderer: THREE.WebGLRenderer;
@@ -69,6 +70,7 @@ class Game {
     this.renderer = this.setupRenderer();
     this.assets = assets;
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    this.camera.rotation.order = 'YXZ';
     this.camera.position.x = 0;
     this.camera.position.y = 16;
     this.camera.position.z = 0;
@@ -216,9 +218,10 @@ class Game {
     if (!ped) return;
     let goSync = false;
 
-    // ped.setRotationFromEuler(
-      //   camera.rotation,
-      // );
+    const cameraRot = camera.rotation.clone();
+    cameraRot.x = degToRad(0);
+
+    ped.setRotationFromEuler(cameraRot);
     // this.camera.lookAt(ped.position);
 
     // this.camera.position = new Vector3(
