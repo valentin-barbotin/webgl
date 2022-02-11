@@ -6,6 +6,7 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable max-len */
 import * as THREE from 'three';
+import Stats from 'three/examples/jsm/libs/stats.module';
 import { Quaternion, Vector2, Vector3, Vector3Tuple } from 'three';
 import Ammo from 'ammojs-typed';
 import GameController from './GameController';
@@ -62,6 +63,8 @@ class Game {
 
   public physics: Physics;
 
+  private stats: Stats;
+
   constructor(assets: Assets) {
     this.renderer = this.setupRenderer();
     this.assets = assets;
@@ -86,6 +89,11 @@ class Game {
     this.backend = new Backend(this);
     this.sounds = new Sounds(this);
     this.physics = new Physics(this);
+
+    this.stats = Stats();
+    this.stats.showPanel(0);
+    this.stats.domElement.style.cssText = 'position:absolute;top:0px;left:0px;';
+    document.body.appendChild(this.stats.domElement);
     console.log('Game created');
   }
 
@@ -139,6 +147,8 @@ class Game {
    */
   public async startGame(): Promise<void> {
     console.log('Game started');
+    this.sounds.startSound(this.assets.soundList.bgForest);
+
     if (!this.Character) return;
     await this.physics.setupAmmo();
 
@@ -365,6 +375,8 @@ class Game {
     requestAnimationFrame(this.renderScene.bind(this));
     this.previousTime = time;
     this.renderer.render(this.scene, this.camera);
+    this.stats.update();
+    this.previousTime = time;
   }
 
   /**
