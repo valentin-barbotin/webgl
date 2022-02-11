@@ -67,7 +67,7 @@ class Game {
     this.renderer = this.setupRenderer();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     this.camera.position.x = 0;
-    this.camera.position.y = 20;
+    this.camera.position.y = 16;
     this.camera.position.z = 0;
 
     this.players = new Map<string, User>();
@@ -205,14 +205,26 @@ class Game {
     const ped = this.currentUser.getPed();
     if (!ped) return;
     let goSync = false;
-    ped.setRotationFromEuler(
-      camera.rotation,
-    );
+
+    // ped.setRotationFromEuler(
+      //   camera.rotation,
+      // );
+    // this.camera.lookAt(ped.position);
+
+    // this.camera.position = new Vector3(
+
+    // const p = new THREE.Vector3(0, 0, -20);
+    // p.applyMatrix4(camera.matrixWorld);
+
+    // ped.position.copy(p);
+    // ped.position.setY(0);
+    // ped.lookAt(camera.position);
+
 
     // TODO: Calcule the right vector
-    ped.position.x = camera.position.x + 6;
+    ped.position.x = camera.position.x;
     // character.position.y = character.geometry.parameters.height / 2;
-    ped.position.z = camera.position.z + 6;
+    ped.position.z = camera.position.z;
     const pedPos = ped.position.clone();
 
     // Reduce positions and rotations before sending them to the server
