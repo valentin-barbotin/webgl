@@ -4,11 +4,11 @@ import { AnimationAction } from 'three';
 import Game from './Game';
 
 enum ANIMATIONS {
-    BOXING = 'BOXING',
-    IDLE = 'IDLE',
-    SPRINT = 'SPRINT',
-    WALK_BACKWARD = 'WALK_BACKWARD',
-    WALK_FORWARD = 'WALK_FORWARD',
+  BOXING = 'BOXING',
+  IDLE = 'IDLE',
+  SPRINT = 'SPRINT',
+  WALK_BACKWARD = 'WALK_BACKWARD',
+  WALK_FORWARD = 'WALK_FORWARD',
 }
 
 class Character {
@@ -18,7 +18,10 @@ class Character {
 
   public animations: AnimationAction[] = [];
 
-  constructor(ped: GLTF) {
+  public model: string;
+
+  constructor(ped: GLTF, model: string) {
+    this.model = model;
     this.ped = ped;
     // Once the character is loaded, shadow is enabled (cast/receive) on each meshs
     this.ped.scene.traverse((child) => {
@@ -34,8 +37,9 @@ class Character {
 
     // Once the character is loaded, we create a mixer for the animations
     this.mixer = new THREE.AnimationMixer(ped.scene);
-    this.animations = ped.animations.map((animation) => this.mixer.clipAction(animation))
-    
+    this.animations = ped.animations.map((animation) => this.mixer.clipAction(animation));
+    this.playAnimation(ANIMATIONS.IDLE);
+
     ped.scene.scale.set(10, 10, 10);
     ped.scene.position.set(0, 0, 0);
   }
@@ -44,7 +48,7 @@ class Character {
     let founded = false;
     this.animations.forEach((animation) => {
       console.log('value', animation.getClip().name);
-      if (animation.getClip().name == name) {
+      if (animation.getClip().name === name) {
         founded = true;
         animation.play();
       } else {

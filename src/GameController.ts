@@ -6,7 +6,6 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import * as THREE from 'three';
 import Game from './Game';
 import { ANIMATIONS } from './Character';
-
 class GameController {
   public camera: THREE.PerspectiveCamera | undefined;
 
@@ -89,7 +88,7 @@ class GameController {
       case 'ShiftLeft':
       case 'AltLeft':
         this.sprint = false;
-        this._game.Character?.playAnimation(ANIMATIONS.SPRINT);
+        this._game.Character?.playAnimation(ANIMATIONS.IDLE);
         break;
 
       default:
@@ -122,7 +121,7 @@ class GameController {
       case 'ShiftLeft':
       case 'AltLeft':
         this.sprint = true;
-        this._game.Character?.playAnimation(ANIMATIONS.IDLE);
+        this._game.Character?.playAnimation(ANIMATIONS.SPRINT);
         break;
 
       default:

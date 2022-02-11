@@ -114,7 +114,7 @@ class Game {
     const ped = await this.assets.getModel(modelKey);
 
     // Create the character and the user, add the character to the scene
-    this.Character = new Character(ped);
+    this.Character = new Character(ped, modelKey);
     this.scene.add(this.Character.ped.scene);
     this.mixers.push(this.Character.mixer);
 
@@ -130,7 +130,7 @@ class Game {
 
     this.lastPosition = reduction.reducedPos;
     this.lastRotation = reduction.reducedRot;
-    this.Character.ped.scene.visible = false;
+    this.Character.ped.scene.visible = true;
   }
 
   /**
@@ -210,9 +210,9 @@ class Game {
     );
 
     // TODO: Calcule the right vector
-    ped.position.x = camera.position.x;
+    ped.position.x = camera.position.x + 6;
     // character.position.y = character.geometry.parameters.height / 2;
-    ped.position.z = camera.position.z;
+    ped.position.z = camera.position.z + 6;
     const pedPos = ped.position.clone();
 
     // Reduce positions and rotations before sending them to the server

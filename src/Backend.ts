@@ -30,7 +30,7 @@ class Backend {
     const username = usernameField.value;
     const password = passwordField.value;
 
-    const model = this.game.assets.modelList.player2;
+    const model = (this.game.Character?.model) ?? this.game.assets.modelList.player1;
 
     if (username.length === 0 || password.length === 0) return;
 
@@ -132,10 +132,7 @@ class Backend {
 
       case 'bullet': {
         const bullet = _message.data as MessageData;
-        console.log(bullet);
         if (!bullet.mass || !bullet.radius || !bullet.speed || !bullet.pos || !bullet.direction) return;
-        console.log(bullet.pos);
-        console.log(bullet.direction);
         this.game.physics.shootBullet(bullet as IBullet);
         break;
       }
@@ -208,7 +205,7 @@ class Backend {
 
       this.game.assets?.getModel(user._model ?? 'default').then((model) => {
         if (!model) throw new Error('No model');
-        const character = new Character(model);
+        const character = new Character(model, user._model!);
         const _user = new User(user._id!, user._name!, character);
         const ped = _user.getPed();
         if (!ped) {
