@@ -52,10 +52,10 @@ class Assets {
   // All the models used in the game
   public modelList = {
     world: '/assets/map/world.glb',
-    player1: '/assets/characters/player1.glb',
-    player2: '/assets/characters/player2.glb',
-    player3: '/assets/characters/player3.glb',
-    player4: '/assets/characters/player4.glb',
+    combat: '/assets/characters/combat.glb',
+    doctor: '/assets/characters/doctor.glb',
+    mage: '/assets/characters/mage.glb',
+    monster: '/assets/characters/monster.glb',
   };
 
   public soundList = {
