@@ -13,7 +13,7 @@ class Assets {
   private textureMap: Map<string, Texture>;
 
   private modelMap: Map<string, Group>;
-  //   private modelsMap: Map<string, string>;
+
   private audioMap: Map<string, Audio>;
 
   private TextureLoader: TextureLoader;
@@ -24,8 +24,6 @@ class Assets {
   private soundsLoaded: number = 0;
 
   private assetsPath = '/assets/';
-
-  public camera: THREE.PerspectiveCamera;
 
   public listener = new THREE.AudioListener();
 
@@ -61,8 +59,8 @@ class Assets {
 
   public soundList = {
     leaf: 'marchefeuille.ogg',
-    bgForest: 'background_forest.mp3'
-  }
+    bgForest: 'background_forest.mp3',
+  };
 
   constructor() {
     //audio loader
@@ -74,10 +72,6 @@ class Assets {
     this.GLTFLoader = new GLTFLoader();
     this.texturesLoaded = Object.keys(this.textureList).length;
     this.soundsLoaded = Object.keys(this.soundList).length;
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
-    this.camera.position.x = 0;
-    this.camera.position.y = 20;
-    this.camera.position.z = 0;
   }
 
   /**
@@ -155,7 +149,6 @@ class Assets {
     }
     console.log('key found');
     return this.audioMap.get(key) ?? new Audio(this.listener);
-
   }
 }
 
