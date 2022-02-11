@@ -65,6 +65,12 @@ class GameController {
     if (!this._game.backend) return;
     const key = event.code;
     // if the key is released, we set the value to false
+    const message: IMessage = {
+      type: 'animation',
+      data: {
+        animation: ANIMATIONS.IDLE,
+      },
+    };
     switch (key) {
       case 'KeyZ':
       case 'KeyW':
@@ -72,12 +78,7 @@ class GameController {
           this.moveForward = false;
           // if (this.sprint) break;
           this._game.Character?.playAnimation(ANIMATIONS.IDLE);
-          const message: IMessage = {
-            type: 'animation',
-            data: {
-              animation: ANIMATIONS.IDLE,
-            },
-          };
+          message.data.animation = ANIMATIONS.IDLE;
           this._game.backend.sendMessage(message);
         }
 
@@ -91,6 +92,13 @@ class GameController {
         break;
       case 'KeyS':
         this.moveBackward = false;
+        {
+          this.moveForward = false;
+          // if (this.sprint) break;
+          this._game.Character?.playAnimation(ANIMATIONS.IDLE);
+          message.data.animation = ANIMATIONS.IDLE;
+          this._game.backend.sendMessage(message);
+        }
         break;
       case 'KeyE':
         if (this._controls.isLocked) {
@@ -106,12 +114,7 @@ class GameController {
         {
           this.sprint = false;
           this._game.Character?.playAnimation(ANIMATIONS.IDLE);
-          const message: IMessage = {
-            type: 'animation',
-            data: {
-              animation: ANIMATIONS.IDLE,
-            },
-          };
+          message.data.animation = ANIMATIONS.IDLE;
           this._game.backend.sendMessage(message);
         }
         break;
@@ -127,6 +130,13 @@ class GameController {
   private onKeyDown(event: KeyboardEvent) {
     if (!this._game.backend) return;
     const key = event.code;
+
+    const message: IMessage = {
+      type: 'animation',
+      data: {
+        animation: ANIMATIONS.IDLE,
+      },
+    };
     // Add sound when character walk
     // if the key is released, we set the value to false, the player can move forward and left at the same time if he don't release the forward key
     switch (key) {
@@ -135,13 +145,8 @@ class GameController {
         {
           this.moveForward = true;
           if (this.sprint) break;
-          this._game.Character?.playAnimation(ANIMATIONS.WALK_BACKWARD);
-          const message: IMessage = {
-            type: 'walk',
-            data: {
-              walk: true,
-            },
-          };
+          this._game.Character?.playAnimation(ANIMATIONS.WALK_FORWARD);
+          message.data.animation = ANIMATIONS.WALK_FORWARD;
           this._game.backend.sendMessage(message);
         }
         break;
@@ -153,19 +158,20 @@ class GameController {
         this.moveRight = true;
         break;
       case 'KeyS':
-        this.moveBackward = true;
+        {
+          this.moveBackward = true;
+          if (this.sprint) break;
+          this._game.Character?.playAnimation(ANIMATIONS.WALK_BACKWARD);
+          message.data.animation = ANIMATIONS.WALK_BACKWARD;
+          this._game.backend.sendMessage(message);
+        }
         break;
       case 'ShiftLeft':
       case 'AltLeft':
         {
           if (!this.sprint) {
             this._game.Character?.playAnimation(ANIMATIONS.SPRINT);
-            const message: IMessage = {
-              type: 'animation',
-              data: {
-                animation: ANIMATIONS.SPRINT,
-              },
-            };
+            message.data.animation = ANIMATIONS.SPRINT;
             this._game.backend.sendMessage(message);
           }
           this.sprint = true;

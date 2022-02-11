@@ -13,13 +13,12 @@ interface IMessageSync {
     rotation: number[],
 }
 
-interface IMessageNewUserJoined extends IUser {}
 
 interface IMessage {
     type: string;
-    data: IMessageNewUserJoined | {[k: string]: any};
+    data: {[k: string]: any};
 }
 
 export {
-  IMessage, MessageData, IMessageNewUserJoined, IMessageSync,
+  IMessage, MessageData, IMessageSync,
 };

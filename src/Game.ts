@@ -103,17 +103,17 @@ class Game {
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
 
     switch (model) {
-      case 'player1':
-        this._model = this.assets.modelList.player1;
+      case 'combat':
+        this._model = this.assets.modelList.combat;
         break;
-      case 'player2':
-        this._model = this.assets.modelList.player2;
+      case 'doctor':
+        this._model = this.assets.modelList.doctor;
         break;
-      case 'player3':
-        this._model = this.assets.modelList.player3;
+      case 'mage':
+        this._model = this.assets.modelList.mage;
         break;
-      case 'player4':
-        this._model = this.assets.modelList.player4;
+      case 'monster':
+        this._model = this.assets.modelList.monster;
         break;
       default:
         this._model = '';
