@@ -14,7 +14,7 @@ class Sounds {
 
   public startSound(soundKey: string) {
     const sound = this._game.assets.getSound(soundKey);
-    if (!sound) return;
+    if (!sound || sound.isPlaying) return;
     sound.play();
   }
 
