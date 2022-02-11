@@ -48,32 +48,31 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- MENU TO CHOOSE YOUR 3D CHARACTER -->
                 <div class="col-md-7 menuContainer">
-                    <div id="carouselExampleFade" class="carousel slide carousel-fade" data-bs-ride="carousel">
+                    <div id="carousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
                         <div class="carousel-inner carrouselLabel">
-                            <div class="carousel-item active text-center">
-                                <p>FIRST MODEL</p>
+                            <div model="player1" class="carousel-item active text-center">
+                                <p>Monstre</p>
                             </div>
-                            <div class="carousel-item text-center">
-                                <p>SECOND MODEL</p>
+                            <div model="player2" class="carousel-item text-center">
+                                <p>SuperMasque</p>
                             </div>
-                            <div class="carousel-item text-center">
-                                <p>THIRD MODEL</p>
+                            <div model="player3" class="carousel-item text-center">
+                                <p>Monstre</p>
+                            </div>
+                            <div model="player4" class="carousel-item text-center">
+                                <p>Mage</p>
                             </div>
                         </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade"
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carousel"
                             data-bs-slide="prev">
                             <span class="carousel-control-prev-icon"></span>
                         </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleFade"
+                        <button class="carousel-control-next" type="button" data-bs-target="#carousel"
                             data-bs-slide="next">
                             <span class="carousel-control-next-icon"></span>
                         </button>
-                    </div>
-                    <div class="text-center">
-                        <button class="btn btn-secondary mt-3">Choose this model</button>
                     </div>
                 </div>
             </div>
@@ -89,15 +88,26 @@
         const overlay = document.getElementById('overlay');
         const lobby = document.getElementById('lobby');
 
-        if (!launchGameButton || !overlayButtonButton || !overlay || !lobby || !usernameField || !passwordField) {
+        if (!launchGameButton || !overlayButtonButton || !overlay || !lobby || !usernameField || !passwordField || !carousel) {
             console.log('Error: no element found');
         } else {
             launchGameButton.addEventListener('click', () => {
-                
-                if (usernameField.value.length == 0 || passwordField.value.length == 0) return;
-                
+
+                const activeElement = document.getElementsByClassName('active');
+                const model = activeElement.item(0).getAttribute('model') ?? '';
+                if (model === '') {
+                    alert('Please select a model');
+                    return;
+                }
+                console.log('model choisi: ', model);
+
+                if (usernameField.value.length < 1 || passwordField.value.length < 1) {
+                    alert('Please fill in all the fields');
+                    return;
+                }
+
                 lobby.hidden = true;
-                init();
+                init(model);
             });
 
             overlayButtonButton.addEventListener('click', () => {

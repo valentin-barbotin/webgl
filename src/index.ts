@@ -77,15 +77,33 @@ async function createSkybox(game: Game): Promise<void> {
   game.scene.add(skybox);
 }
 
-async function init() {
+async function init(model: string) {
   // Setup the assets and preload them
   const assets = new Assets();
   await assets.setup();
   // Setup the game, this will create the scene and the renderer
   const game = new Game(assets);
+  let _model = '';
+
+  switch (model) {
+    case 'player1':
+      _model = game.assets.modelList.player1;
+      break;
+    case 'player2':
+      _model = game.assets.modelList.player2;
+      break;
+    case 'player3':
+      _model = game.assets.modelList.player3;
+      break;
+    case 'player4':
+      _model = game.assets.modelList.player4;
+      break;
+    default:
+      break;
+  }
 
   // Create the character of the user (player)
-  await game.setCharacter(game.assets.modelList.meuf);
+  await game.setCharacter(_model);
 
   if (Object.prototype.hasOwnProperty.call(window, 'Ammo')) {
     // start rendering
