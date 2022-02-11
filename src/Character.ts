@@ -46,7 +46,7 @@ class Character {
     game.mixers.push(this.mixer);
 
     ped.scene.scale.set(10, 10, 10);
-    ped.scene.position.set(0, 0, 0);
+    ped.scene.position.set(100, 0, 40);
   }
 
   public playAnimation(name: string) {

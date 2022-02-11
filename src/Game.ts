@@ -84,9 +84,9 @@ class Game {
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     this.camera.rotation.order = 'YXZ';
-    this.camera.position.x = 0;
+    this.camera.position.x = 100;
     this.camera.position.y = 16;
-    this.camera.position.z = 0;
+    this.camera.position.z = 40;
 
     this.players = new Map<string, User>();
 
