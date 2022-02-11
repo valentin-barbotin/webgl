@@ -9,7 +9,7 @@ import { IMessage, IMessageSync, MessageData } from './interfaces/Message';
 import IUser from './interfaces/User';
 import { BufferToObject, objectToBuffer } from './utils';
 import gameConfig from './config/config';
-import Character from './Character';
+import Character, { ANIMATIONS } from './Character';
 import User from './User';
 import IBullet from './interfaces/Bullet';
 
@@ -30,18 +30,16 @@ class Backend {
     const username = usernameField.value;
     const password = passwordField.value;
 
-    const model = (this.game.Character?.model) ?? this.game.assets.modelList.player1;
-
     if (username.length === 0 || password.length === 0) return;
 
     this.user = {
       _id: '',
       _name: username,
-      _model: model,
+      _model: game._model,
       getPed: () => this.user.character?.ped.scene,
+      character: this.game.Character,
     };
     this.loginWithBackend(password);
-    // this.roomID = window.prompt('Enter choose a room');
   }
 
   /**
@@ -77,12 +75,15 @@ class Backend {
   private connected(ev: Event, password: string): void {
     if (!this.endpoint) return;
     if (this.endpoint.readyState === this.endpoint.OPEN) {
+      const { _id, _name, _model } = this.user;
       const user = {
-        ...this.user,
+        _id,
+        _name,
+        _model,
       };
 
-      delete user.getPed;
-      delete user.character;
+      console.log('Connected');
+      console.log(user);
 
       const response: IMessage = {
         type: 'login',
@@ -127,6 +128,15 @@ class Backend {
       }
       case 'userSyncPos': {
         this.userSyncPos(_message.data as IMessageSync);
+        break;
+      }
+      case 'animation': {
+        const { id, animation } = _message.data as MessageData;
+        if (!id || !animation) throw new Error('Invalid payload');
+        const player = this.game.players.get(id);
+        if (!player) throw new Error('Player not found');
+
+        player.Character?.playAnimation(animation);
         break;
       }
 

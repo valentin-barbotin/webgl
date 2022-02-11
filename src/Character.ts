@@ -42,6 +42,9 @@ class Character {
     this.animations = ped.animations.map((animation) => this.mixer.clipAction(animation));
     this.playAnimation(ANIMATIONS.IDLE);
 
+    game.scene.add(this.ped.scene);
+    game.mixers.push(this.mixer);
+
     ped.scene.scale.set(10, 10, 10);
     ped.scene.position.set(0, 0, 0);
   }
@@ -49,7 +52,6 @@ class Character {
   public playAnimation(name: string) {
     let founded = false;
     this.animations.forEach((animation) => {
-      console.log('value', animation.getClip().name);
       if (animation.getClip().name === name) {
         founded = true;
         animation.play();

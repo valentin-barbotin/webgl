@@ -1,3 +1,5 @@
+/* eslint-disable no-lone-blocks */
+/* eslint-disable no-case-declarations */
 /* eslint-disable max-len */
 /* eslint-disable lines-between-class-members */
 /* eslint-disable no-underscore-dangle */
@@ -6,6 +8,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import * as THREE from 'three';
 import Game from './Game';
 import { ANIMATIONS } from './Character';
+import { IMessage } from './interfaces/Message';
 class GameController {
   public camera: THREE.PerspectiveCamera | undefined;
 
@@ -27,7 +30,7 @@ class GameController {
 
   private _game: Game;
 
-  public animation: string = 'IDLE'; 
+  public animation: string = 'IDLE';
 
   constructor(camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, game: Game) {
     window.addEventListener('keydown', this.onKeyDown.bind(this)); // bind is used to set the this keyword, because if we don't, this keyword will be window
@@ -59,12 +62,25 @@ class GameController {
   public get controls() : PointerLockControls { return this._controls; }
 
   private onKeyUp(event: KeyboardEvent) {
+    if (!this._game.backend) return;
     const key = event.code;
     // if the key is released, we set the value to false
     switch (key) {
       case 'KeyZ':
       case 'KeyW':
-        this.moveForward = false;
+        {
+          this.moveForward = false;
+          // if (this.sprint) break;
+          this._game.Character?.playAnimation(ANIMATIONS.IDLE);
+          const message: IMessage = {
+            type: 'animation',
+            data: {
+              animation: ANIMATIONS.IDLE,
+            },
+          };
+          this._game.backend.sendMessage(message);
+        }
+
         break;
       case 'KeyA':
       case 'KeyQ':
@@ -87,8 +103,17 @@ class GameController {
 
       case 'ShiftLeft':
       case 'AltLeft':
-        this.sprint = false;
-        this._game.Character?.playAnimation(ANIMATIONS.IDLE);
+        {
+          this.sprint = false;
+          this._game.Character?.playAnimation(ANIMATIONS.IDLE);
+          const message: IMessage = {
+            type: 'animation',
+            data: {
+              animation: ANIMATIONS.IDLE,
+            },
+          };
+          this._game.backend.sendMessage(message);
+        }
         break;
 
       default:
@@ -100,13 +125,25 @@ class GameController {
   }
 
   private onKeyDown(event: KeyboardEvent) {
+    if (!this._game.backend) return;
     const key = event.code;
     // Add sound when character walk
     // if the key is released, we set the value to false, the player can move forward and left at the same time if he don't release the forward key
     switch (key) {
       case 'KeyZ':
       case 'KeyW':
-        this.moveForward = true;
+        {
+          this.moveForward = true;
+          if (this.sprint) break;
+          this._game.Character?.playAnimation(ANIMATIONS.WALK_BACKWARD);
+          const message: IMessage = {
+            type: 'walk',
+            data: {
+              walk: true,
+            },
+          };
+          this._game.backend.sendMessage(message);
+        }
         break;
       case 'KeyA':
       case 'KeyQ':
@@ -120,8 +157,19 @@ class GameController {
         break;
       case 'ShiftLeft':
       case 'AltLeft':
-        this.sprint = true;
-        this._game.Character?.playAnimation(ANIMATIONS.SPRINT);
+        {
+          if (!this.sprint) {
+            this._game.Character?.playAnimation(ANIMATIONS.SPRINT);
+            const message: IMessage = {
+              type: 'animation',
+              data: {
+                animation: ANIMATIONS.SPRINT,
+              },
+            };
+            this._game.backend.sendMessage(message);
+          }
+          this.sprint = true;
+        }
         break;
 
       default:

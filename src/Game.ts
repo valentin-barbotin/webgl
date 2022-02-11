@@ -48,7 +48,7 @@ class Game {
 
   public raycaster: THREE.Raycaster;
 
-  public backend: Backend;
+  public backend?: Backend;
 
   private lastPosition?: THREE.Vector3Tuple;
 
@@ -66,9 +66,22 @@ class Game {
 
   private stats: Stats;
 
-  constructor(assets: Assets) {
+  public speeds: any = {
+    sprint: 800,
+    walk: 400,
+  };
+
+  public _model: string;
+
+  constructor(assets: Assets, model: string) {
     this.renderer = this.setupRenderer();
     this.assets = assets;
+
+    // // Precompute textures
+    // this.assets.textureMap.forEach((texture) => {
+    //   this.renderer.initTexture(texture);
+    // });
+
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
     this.camera.rotation.order = 'YXZ';
     this.camera.position.x = 0;
@@ -88,7 +101,26 @@ class Game {
 
     this.GameController = new GameController(this.camera, this.renderer, this);
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
-    this.backend = new Backend(this);
+
+    switch (model) {
+      case 'player1':
+        this._model = this.assets.modelList.player1;
+        break;
+      case 'player2':
+        this._model = this.assets.modelList.player2;
+        break;
+      case 'player3':
+        this._model = this.assets.modelList.player3;
+        break;
+      case 'player4':
+        this._model = this.assets.modelList.player4;
+        break;
+      default:
+        this._model = '';
+        break;
+    }
+
+    // Create the character of the user (player)
     this.sounds = new Sounds(this);
     this.physics = new Physics(this);
 
@@ -99,7 +131,8 @@ class Game {
     console.log('Game created');
   }
 
-  private get currentUser() : IUser {
+  private get currentUser() : IUser | null {
+    if (!this.backend) return null;
     return this.backend.user;
   }
 
@@ -119,18 +152,12 @@ class Game {
    * @param {string} key
    * @return {void}
    */
-  public async setCharacter(modelKey: string): Promise<void> {
+  public async setCharacter(): Promise<void> {
     if (!this.assets) return;
-    const ped = await this.assets.getModel(modelKey);
+    const ped = await this.assets.getModel(this._model);
 
     // Create the character and the user, add the character to the scene
-    this.Character = new Character(ped, modelKey, this);
-    this.scene.add(this.Character.ped.scene);
-    this.mixers.push(this.Character.mixer);
-
-    // Tell the backend the current user
-    this.backend.user.character = this.Character;
-    this.backend.user.getPed = () => this.Character?.ped.scene;
+    this.Character = new Character(ped, this._model, this);
 
     // Used to sync the character, smaller values are better for syncing and transmission
     const reduction = {
@@ -140,7 +167,7 @@ class Game {
 
     this.lastPosition = reduction.reducedPos;
     this.lastRotation = reduction.reducedRot;
-    this.Character.ped.scene.visible = true;
+    this.Character.ped.scene.visible = false;
   }
 
   /**
@@ -149,7 +176,6 @@ class Game {
    */
   public async startGame(): Promise<void> {
     console.log('Game started');
-    this.sounds.startSound(this.assets.soundList.bgForest);
 
     if (!this.Character) return;
     await this.physics.setupAmmo();
@@ -214,7 +240,7 @@ class Game {
    * @return {void}
    */
   private updateLocalPlayer(camera: THREE.Camera): void {
-    const ped = this.currentUser.getPed();
+    const ped = this.currentUser?.getPed();
     if (!ped) return;
     let goSync = false;
 
@@ -304,8 +330,8 @@ class Game {
     this.GameController.direction.z = Number(this.GameController.moveForward) - Number(this.GameController.moveBackward); // 1 = forward, -1 = backward
     this.GameController.direction.x = Number(this.GameController.moveRight) - Number(this.GameController.moveLeft);
     this.GameController.direction.normalize(); // this ensures consistent movements in all directions+
-    if (this.GameController.moveForward || this.GameController.moveBackward) this.GameController.velocity.z -= this.GameController.direction.z * (this.GameController.sprint ? 800 : 400) * delta; // acceleration (direction * speed)
-    if (this.GameController.moveLeft || this.GameController.moveRight) this.GameController.velocity.x -= this.GameController.direction.x * (this.GameController.sprint ? 800 : 400) * delta;
+    if (this.GameController.moveForward || this.GameController.moveBackward) this.GameController.velocity.z -= this.GameController.direction.z * (this.GameController.sprint ? this.speeds.sprint : this.speeds.walk) * delta; // acceleration (direction * speed)
+    if (this.GameController.moveLeft || this.GameController.moveRight) this.GameController.velocity.x -= this.GameController.direction.x * (this.GameController.sprint ? this.speeds.sprint : this.speeds.walk) * delta;
 
     this.GameController.velocity.y = Math.max(0, this.GameController.velocity.y); // clamping (prevents going through the ground)
 
@@ -338,7 +364,7 @@ class Game {
   private updatePlayers(): void {
     const clockDelta = this.clock.getDelta();
 
-    this.currentUser.character?.mixer?.update(clockDelta);
+    this.currentUser?.character?.mixer?.update(clockDelta);
 
     this.players.forEach((player) => {
       const ped = player.getPed();
@@ -386,6 +412,7 @@ class Game {
    * @return {void}
    */
   private syncCharacter(): void {
+    if (!this.backend) return;
     if (!this.Character) {
       throw new Error('Character is not set');
     }

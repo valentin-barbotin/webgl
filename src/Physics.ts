@@ -48,6 +48,7 @@ class Physics {
    * @return {void}
    */
   private shootBulletSync(bullet: IBullet): void {
+    if (!this._game.backend) return;
     delete bullet.gfxObj;
     delete bullet.physObj;
     const message: IMessage = {

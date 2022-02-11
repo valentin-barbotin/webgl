@@ -17,6 +17,7 @@ import dat from 'dat.gui';
 import Assets from './Assets';
 import Game from './Game';
 import { addVecToMenu, preloadObject } from './utils';
+import Backend from './Backend';
 
 const groundSize = 200;
 
@@ -82,28 +83,11 @@ async function init(model: string) {
   const assets = new Assets();
   await assets.setup();
   // Setup the game, this will create the scene and the renderer
-  const game = new Game(assets);
-  let _model = '';
+  const game = new Game(assets, model);
 
-  switch (model) {
-    case 'player1':
-      _model = game.assets.modelList.player1;
-      break;
-    case 'player2':
-      _model = game.assets.modelList.player2;
-      break;
-    case 'player3':
-      _model = game.assets.modelList.player3;
-      break;
-    case 'player4':
-      _model = game.assets.modelList.player4;
-      break;
-    default:
-      break;
-  }
+  await game.setCharacter();
 
-  // Create the character of the user (player)
-  await game.setCharacter(_model);
+  game.backend = new Backend(game);
 
   if (Object.prototype.hasOwnProperty.call(window, 'Ammo')) {
     // start rendering
@@ -118,6 +102,9 @@ async function init(model: string) {
   addVecToMenu(gui, game.Character.ped.scene.scale, 'Scale');
   addVecToMenu(gui, game.Character.ped.scene.position, 'Position');
   addVecToMenu(gui, game.GameController.controls.getObject().position, 'Position (camera)');
+  const fd = gui.addFolder('speeds');
+  fd.add(game.speeds, 'sprint', 300, 1000);
+  fd.add(game.speeds, 'walk', 300, 1000);
 
   const world = await assets.getModel(game.assets.modelList.world);
   world.scene.scale.set(7, 7, 7);
@@ -131,6 +118,14 @@ async function init(model: string) {
         // eslint-disable-next-line no-param-reassign
         child.receiveShadow = true;
         preloadObject(child, game.scene, game.renderer, game.camera);
+      }
+
+      const animation = child.animations.shift();
+      if (animation) {
+        const mixer = new THREE.AnimationMixer(child);
+        const action = mixer.clipAction(animation).play();
+        game.mixers.push(mixer);
+        action.play();
       }
     }
   });
