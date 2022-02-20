@@ -106,13 +106,6 @@ async function init(model: string) {
   fd.add(game.speeds, 'sprint', 300, 1000);
   fd.add(game.speeds, 'walk', 300, 1000);
 
-  const vol = {
-    Volume: 50,
-  };
-  gui.add(vol, 'Volume', 0, 100, 1).onChange(() => {
-    game.assets.getSound(game.assets.soundList.bgForest).setVolume(vol.Volume / 100);
-  });
-
   const world = await assets.getModel(game.assets.modelList.world);
   world.scene.scale.set(7, 7, 7);
   world.scene.position.set(0, 0, 0);
@@ -138,6 +131,15 @@ async function init(model: string) {
   });
 
   game.scene.add(world.scene);
+  const bgSound = game.assets.getSound(game.assets.soundList.bgForest);
+  const vol = {
+    Volume: 10,
+  };
+  // divide by 100 to avoid ear rape
+  bgSound.setVolume(vol.Volume / 100);
+  gui.add(vol, 'Volume', 0, 100, 1).onChange(() => {
+    bgSound.setVolume(vol.Volume / 100);
+  });
 }
 
 // Add init function to window
