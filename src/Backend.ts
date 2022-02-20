@@ -3,13 +3,12 @@
 /* eslint-disable import/extensions */
 /* eslint-disable import/no-unresolved */
 /* eslint-disable class-methods-use-this */
-import * as THREE from 'three';
 import Game from './Game';
 import { IMessage, IMessageSync, MessageData } from './interfaces/Message';
 import IUser from './interfaces/User';
 import { BufferToObject, objectToBuffer } from './utils';
 import gameConfig from './config/config';
-import Character, { ANIMATIONS } from './Character';
+import Character from './Character';
 import User from './User';
 import IBullet from './interfaces/Bullet';
 
@@ -17,8 +16,6 @@ class Backend {
   private endpoint?: WebSocket;
 
   public user: IUser;
-
-  private roomID?: string;
 
   private game: Game;
 
@@ -58,6 +55,7 @@ class Backend {
    * @param {Event} ev
    * @return {void}
    */
+  // eslint-disable-next-line no-unused-vars
   private onDisconnect(ev: Event): void {
     if (!this.endpoint) return;
     console.log('Disconnected');

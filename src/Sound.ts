@@ -14,13 +14,17 @@ class Sounds {
 
   public startSound(soundKey: string) {
     const sound = this._game.assets.getSound(soundKey);
-    if (!sound || sound.isPlaying) return;
+    if (!sound || sound == null || sound.isPlaying) return;
+    // console.warn(sound);
+    console.warn('start', sound.name);
     sound.play();
   }
 
   public stopSound(soundKey: string) {
     const sound = this._game.assets.getSound(soundKey);
-    if (!sound) return;
+    if (!sound || sound == null) return;
+    console.log('volume = ', sound.getVolume());
+    console.warn('stop', sound.name, sound.getVolume());
     sound.stop();
   }
 }

@@ -106,6 +106,13 @@ async function init(model: string) {
   fd.add(game.speeds, 'sprint', 300, 1000);
   fd.add(game.speeds, 'walk', 300, 1000);
 
+  const vol = {
+    Volume: 50,
+  };
+  gui.add(vol, 'Volume', 0, 100, 1).onChange(() => {
+    game.assets.getSound(game.assets.soundList.bgForest).setVolume(vol.Volume / 100);
+  });
+
   const world = await assets.getModel(game.assets.modelList.world);
   world.scene.scale.set(7, 7, 7);
   world.scene.position.set(0, 0, 0);
@@ -113,11 +120,11 @@ async function init(model: string) {
   world.scene.traverse((child) => {
     if (child) {
       if (child instanceof THREE.Mesh) {
+        preloadObject(child, game.scene, game.renderer, game.camera);
         // eslint-disable-next-line no-param-reassign
         child.castShadow = true;
         // eslint-disable-next-line no-param-reassign
         child.receiveShadow = true;
-        preloadObject(child, game.scene, game.renderer, game.camera);
       }
 
       const animation = child.animations.shift();
@@ -135,4 +142,3 @@ async function init(model: string) {
 
 // Add init function to window
 window.init = init;
-

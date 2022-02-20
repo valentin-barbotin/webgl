@@ -178,6 +178,7 @@ class Game {
     console.log('Game started');
 
     if (!this.Character) return;
+    this.sounds.startSound(this.assets.soundList.bgForest);
     await this.physics.setupAmmo();
 
     {
@@ -453,10 +454,10 @@ class Game {
     this.scene.add(ambiantLight);
 
     const light = new THREE.SpotLight(0xffffff, 1.3);
-    light.position.set(0, 100, -20);
-    light.target.position.set(0, 0, 80);
+    light.position.set(-200, 150, -300);
+    light.target.position.set(0, 0, 0);
     // max shadow distance from source and objet
-    light.shadow.camera.near = 0;
+    light.shadow.camera.near = 0.01;
     light.shadow.camera.far = 4000;
     light.castShadow = true;
     // shadows quality

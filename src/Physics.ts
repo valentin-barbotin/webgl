@@ -89,9 +89,9 @@ class Physics {
     const pos = new THREE.Vector3(0, 0, 0);
     const direction = new THREE.Vector3(0, 0, 0);
     const bullet: IBullet = {
-      mass: 50,
+      mass: 400,
       radius: 0.7,
-      speed: 200,
+      speed: 250,
       pos: pos.toArray(),
       direction: direction.toArray(),
     };

@@ -1,14 +1,11 @@
+/* eslint-disable lines-between-class-members */
 /* eslint-disable max-len */
 /* eslint-disable no-plusplus */
 /* eslint-disable no-underscore-dangle */
-import { AudioLoader, Audio, Group, Texture, TextureLoader } from 'three';
+import { Audio, Group, Texture, TextureLoader } from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import EventEmitter from 'events';
 import * as THREE from 'three';
-import Sounds from './Sound';
-import { resolve } from 'path/posix';
-import Game from './Game';
-
 
 class Assets {
   public textureMap: Map<string, Texture>;
@@ -64,8 +61,6 @@ class Assets {
   };
 
   constructor() {
-    //audio loader
-    //map
     this.audioMap = new Map<string, Audio>();
     this.textureMap = new Map<string, Texture>();
     this.modelMap = new Map<string, Group>();
@@ -76,7 +71,6 @@ class Assets {
   }
 
   /**
-   * 
    * @param {string} key
    * @return {Promise<void>}
    */
@@ -102,7 +96,8 @@ class Assets {
       console.log(fullPath);
       const data = await this.audioLoader.loadAsync(fullPath);
       const sound = new THREE.Audio(this.listener);
-      this.audioMap.set(value, sound.setBuffer(data).setVolume(0.5));
+      sound.name = value;
+      this.audioMap.set(value, sound.setBuffer(data).setVolume(1));
       this.soundsLoaded--;
       Tracker.emit('processed');
       console.log(value, 'loaded');
@@ -120,7 +115,6 @@ class Assets {
   }
 
   /**
-   * 
    * @param {string} key
    * @return {Promise<GLTF>}
    */
@@ -130,7 +124,6 @@ class Assets {
   }
 
   /**
-   * 
    * @param {string} key
    * @return {Texture}
    */
@@ -148,8 +141,9 @@ class Assets {
     if (!path) {
       throw new Error(`${key} not found`);
     }
-    console.log('key found');
-    return this.audioMap.get(key) ?? new Audio(this.listener);
+    const audio = this.audioMap.get(key);
+    if (!audio) throw new Error('Audio not found');
+    return audio;
   }
 }
 

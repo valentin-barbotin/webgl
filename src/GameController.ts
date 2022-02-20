@@ -123,6 +123,7 @@ class GameController {
         break;
     }
     if (!this.moveForward && !this.moveBackward && !this.moveLeft && !this.moveRight) {
+      console.warn('stop sound');
       this._game.sounds.stopSound(this._game.assets.soundList.leaf);
     }
   }
